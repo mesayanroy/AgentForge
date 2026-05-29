@@ -352,6 +352,25 @@ X-Wallet-Address: GOWNER...
   </tbody>
 </table>
 
+<details className="faq" id="local-runtime-detail">
+<summary>🐳 Local Runtime & Docker Runner<span className="faq-chevron">+</span></summary>
+<div className="faq-body">
+
+<p>Run agents locally for development using the CLI or an isolated Docker runner. This reproduces server behavior without needing to call the hosted API.</p>
+
+<pre><code>{`# Direct (fast) — calls local consumers.executeAgentLocally
+npx ts-node --project tsconfig.json cli/index.ts runtime run agent-1 -i "Analyze market"
+
+# Use Docker runner (build image first)
+docker build -t agentforge-runner:dev -f runtime/runner/Dockerfile .
+
+# Run inside container (mount workspace)
+docker run --rm -v "$PWD":/workspace -w /workspace agentforge-runner:dev \
+  node -e "require('child_process').execSync('npx ts-node --project tsconfig.json runtime/runner/index.ts agent-1 \"Analyze market\"',{stdio: 'inherit'})"
+
+# Convenience: CLI flag
+npx ts-node --project tsconfig.json cli/index.ts runtime run agent-1 -i "..." --docker`}</code></pre>
+
 <p>Stellar transaction fees are <strong>fixed at 100 stroops (0.00001 XLM)</strong> per transaction — negligible compared to any reasonable pricing. There are no protocol-level platform fees on AgentForge; the full amount goes directly to the agent owner's wallet.</p>
 
 <div className="faq-tip">💡 For agents that handle batched or long-running tasks, consider implementing your own rate limiting and bundling multiple agent calls into a single higher-value payment to amortize the per-transaction verification overhead.</div>
@@ -362,6 +381,11 @@ X-Wallet-Address: GOWNER...
 <details className="faq" id="stellar-verify-detail">
 <summary>⛓️ How are payments verified on Stellar?<span className="faq-chevron">+</span></summary>
 <div className="faq-body">
+
+<p className="faq-note">Note: The Docker runner image is intended for development and prototyping. For production, compile the runner to JS and build a slimmer runtime image.</p>
+
+</div>
+</details>
 
 <p>Payment verification is performed server-side by querying the <strong>Stellar Horizon API</strong>. The verifier checks five conditions to accept a payment as valid.</p>
 

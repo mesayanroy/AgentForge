@@ -2,10 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
 :root {
   /* Fonts */
-  --font-syne: 'Syne', 'Inter', system-ui, sans-serif;
+  --font-syne: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
 
   /* Brand palette */
@@ -16,6 +18,8 @@
   --color-violet-dim: rgba(123, 97, 255, 0.08);
   --color-amber:      #f59e0b;
   --color-green:      #4ade80;
+  --color-green-strong: #2ef28e;
+  --color-green-soft: rgba(46, 242, 142, 0.1);
   --color-surface:    #0b0b10;
   --color-bg:         #050508;
 
@@ -114,6 +118,123 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ── Shared product shell ──────────────────────────────────────────────────── */
+.page-theme {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(46,242,142,0.14), transparent 28%),
+    radial-gradient(circle at 18% 18%, rgba(46,242,142,0.08), transparent 22%),
+    linear-gradient(180deg, #050508 0%, #050508 40%, #08110b 100%);
+}
+
+.page-shell {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px 88px;
+}
+
+.page-hero {
+  position: relative;
+  padding: 68px 0 28px;
+}
+
+.page-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(46,242,142,0.16);
+  background: rgba(46,242,142,0.06);
+  color: rgba(46,242,142,0.95);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+
+.page-title {
+  color: white;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+
+.page-lead {
+  max-width: 760px;
+  color: rgba(255,255,255,0.68);
+  line-height: 1.75;
+}
+
+.page-panel {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 22px;
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+}
+
+.page-panel-soft {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+}
+
+.page-grid {
+  display: grid;
+  gap: 18px;
+}
+
+@media (min-width: 768px) {
+  .page-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .page-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.nav-link-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.72);
+  text-decoration: none;
+}
+
+.nav-link-pill:hover {
+  color: white;
+  background: rgba(255,255,255,0.04);
+}
+
+.nav-link-pill.active {
+  color: var(--color-green-strong);
+  background: rgba(46,242,142,0.08);
+}
+
+.cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--color-green-strong), #59f0ab);
+  color: #041107;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(46,242,142,0.18);
+}
+
+.cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 /* ── Shimmer loading skeleton ──────────────────────────────────────────────── */

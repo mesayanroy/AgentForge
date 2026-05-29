@@ -1,0 +1,11 @@
+{
+  "agents": [
+    {
+      "id": "agent-1",
+      "name": "My First Agent",
+      "model": "openai-gpt4o-mini",
+      "price_xlm": 0.05,
+      "description": "Starter AgentForge agent scaffold"
+    }
+  ]
+}

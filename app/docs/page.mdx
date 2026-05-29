@@ -355,6 +355,26 @@ pnpm cli -- a2a call <fromAgentId> <toAgentId> \
 
 <div className="docs-tip">If a faucet or payment step reports <span className="docs-inline-code">invalid encoded string</span>, the wallet address is not a valid Stellar public key. Use a Freighter address that starts with <span className="docs-inline-code">G</span>.</div>
 
+<div className="docs-section-title" style={{marginTop: '1.2rem'}}>Local Runtime & Docker Runner</div>
+
+<div className="docs-p">For local development you can run agents directly from the CLI or inside an isolated Docker runner. This helps reproduce production behavior and experiment with workflow orchestration.</div>
+
+<div className="docs-code-block">
+  <div className="docs-code-block-header"><span className="docs-code-block-label">Build runner image</span></div>
+  <pre><code>{`# From project root
+# Build a small runner image that contains the repository and runtime
+docker build -t agentforge-runner:dev -f runtime/runner/Dockerfile .`}</code></pre>
+</div>
+
+<div className="docs-code-block">
+  <div className="docs-code-block-header"><span className="docs-code-block-label">Run agent inside Docker runner</span></div>
+  <pre><code>{`# Use the built image (executes the TypeScript runner inside container)
+docker run --rm -v $PWD:/workspace -w /workspace agentforge-runner:dev \ \
+  node -e "require('child_process').execSync('npx ts-node --project tsconfig.json runtime/runner/index.ts agent-1 \"Analyze market\"',{stdio: 'inherit'})"`}</code></pre>
+</div>
+
+<div className="docs-p">Or use the CLI convenience flag <span className="docs-inline-code">--docker</span> with <span className="docs-inline-code">runtime run</span> to run the same flow using the runner image.</div>
+
 <div id="explorer">
   <div className="docs-section-title">Explorer Verification</div>
 </div>

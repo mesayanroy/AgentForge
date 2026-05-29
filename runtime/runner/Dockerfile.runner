@@ -1,0 +1,15 @@
+FROM node:18-bullseye-slim
+
+WORKDIR /app
+
+# Install pnpm to run any required runtime packages (minimize by using --production)
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy package files and install production deps
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile --prod
+
+# Copy the bundled runner
+COPY dist/runner.js ./dist/runner.js
+
+ENTRYPOINT ["node", "/app/dist/runner.js"]

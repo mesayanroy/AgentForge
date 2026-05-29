@@ -12,7 +12,33 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { createConsumer, publish, TOPICS } from '../lib/qstash';
+import { getDemoAgentById } from '../lib/demo-agents';
 import type { PaymentConfirmedEvent, AgentCompletedEvent } from '../types/events';
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+function loadEnvFile(filePath = path.join(process.cwd(), '.env.local')): void {
+  try {
+    if (!fs.existsSync(filePath)) return;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const idx = trimmed.indexOf('=');
+      if (idx < 0) continue;
+      const key = trimmed.slice(0, idx).trim();
+      const value = trimmed.slice(idx + 1).trim();
+      if (key && (process.env[key] === undefined || process.env[key] === '')) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+loadEnvFile();
 
 const CONSUMER_GROUP = 'agentforge-agent-executor';
 
@@ -28,22 +54,56 @@ function getSupabase() {
 }
 
 async function fetchAgent(agentId: string) {
-  const sb = getSupabase();
-  const { data, error } = await sb.from('agents').select('*').eq('id', agentId).single();
-  if (error || !data) throw new Error(`Agent ${agentId} not found`);
-  return data as {
-    id: string;
-    name: string;
-    owner_wallet: string;
-    model: string;
-    system_prompt: string;
-    price_xlm: number;
-    total_requests: number;
-    total_earned_xlm: number;
-  };
+  try {
+    const sb = getSupabase();
+    const { data, error } = await sb.from('agents').select('*').eq('id', agentId).single();
+    if (!error && data) {
+      return data as {
+        id: string;
+        name: string;
+        owner_wallet: string;
+        model: string;
+        system_prompt: string;
+        price_xlm: number;
+        total_requests: number;
+        total_earned_xlm: number;
+      };
+    }
+  } catch (err) {
+    console.warn(`[AgentExecutor] Supabase fetch failed for ${agentId}; falling back to demo agent:`, err);
+  }
+
+  const demo = getDemoAgentById(agentId);
+  if (demo) {
+    return {
+      id: demo.id,
+      name: demo.name,
+      owner_wallet: demo.owner_wallet,
+      model: demo.model,
+      system_prompt: demo.system_prompt,
+      price_xlm: demo.price_xlm,
+      total_requests: demo.total_requests,
+      total_earned_xlm: demo.total_earned_xlm,
+    };
+  }
+
+  throw new Error(`Agent ${agentId} not found`);
 }
 
 async function runModel(model: string, systemPrompt: string, input: string): Promise<string> {
+  if (model === 'mock-echo') {
+    const normalizedInput = typeof input === 'string' ? input : JSON.stringify(input, null, 2);
+    return JSON.stringify(
+      {
+        model,
+        summary: normalizedInput.slice(0, 180),
+        prompt: systemPrompt.slice(0, 120),
+      },
+      null,
+      2
+    );
+  }
+
   if (model === 'openai-gpt4o-mini') {
     // Dynamic import keeps the consumer file lightweight
     const { default: OpenAI } = await import('openai');
@@ -144,3 +204,72 @@ const consumer = createConsumer<PaymentConfirmedEvent>(
 );
 
 export default consumer;
+
+// Export a lightweight local executor so the CLI/runtime can reuse the same
+// model execution and persistence logic in development mode.
+export async function executeAgentLocally(
+  agentId: string,
+  input: string,
+  opts?: { requestId?: string; callerWallet?: string; priceXlm?: number }
+) {
+  const requestId = opts?.requestId ?? `local-${Date.now()}`;
+
+  let agent;
+  try {
+    agent = await fetchAgent(agentId);
+  } catch (err) {
+    throw new Error(`Cannot fetch agent ${agentId}: ${String(err)}`);
+  }
+
+  let output: string;
+  const startTime = Date.now();
+  try {
+    output = await runModel(agent.model, agent.system_prompt, input);
+  } catch (err) {
+    throw new Error(`Model error: ${String(err)}`);
+  }
+
+  const latencyMs = Date.now() - startTime;
+
+  try {
+    const sb = getSupabase();
+    await sb.from('agent_requests').insert({
+      id: requestId,
+      agent_id: agentId,
+      caller_wallet: opts?.callerWallet || null,
+      input_payload: { input },
+      output_response: { output },
+      payment_tx_hash: null,
+      payment_amount_xlm: opts?.priceXlm ?? agent.price_xlm,
+      protocol: 'local-dev',
+      status: 'success',
+      latency_ms: latencyMs,
+      created_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    // Ignore persistence failures in local mode but log
+    console.warn('[AgentExecutor.local] DB insert failed:', err);
+  }
+
+  const completed: AgentCompletedEvent = {
+    requestId,
+    agentId,
+    model: agent.model,
+    callerWallet: opts?.callerWallet ?? '',
+    ownerWallet: agent.owner_wallet,
+    priceXlm: opts?.priceXlm ?? agent.price_xlm,
+    input,
+    output,
+    latencyMs,
+    txHash: '',
+    completedAt: new Date().toISOString(),
+  };
+
+  try {
+    await publish(TOPICS.AGENT_COMPLETED, completed);
+  } catch (err) {
+    console.warn('[AgentExecutor.local] publish failed:', err);
+  }
+
+  return { requestId, output, latencyMs };
+}

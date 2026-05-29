@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import AgentCard from '@/components/AgentCard';
 import { Agent } from '@/types';
+import PageHero from '@/components/PageHero';
 
 interface ForkModalProps {
   agent: Agent;
@@ -143,14 +144,18 @@ export default function MarketplacePage() {
   const trending = agents.filter((a) => a.is_active).slice(0, 3);
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 py-10 space-y-14">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-syne text-4xl font-bold text-white mb-2">Marketplace</h1>
-          <p className="text-gray-400 font-mono text-sm">
-            Discover, buy, and fork AI agents on AgentForge. All payments in XLM via the 0x402 protocol.
-          </p>
-        </motion.div>
+    <div className="page-theme min-h-screen">
+      <PageHero
+        eyebrow="Marketplace"
+        title={<>Discover, buy, and fork live agents.</>}
+        description={<>Explore active agent listings, settle forks in XLM, and turn deployed agents into reusable products.</>}
+        actions={[
+          { href: '/build', label: 'Deploy an Agent' },
+          { href: '/agents', label: 'View Agents', variant: 'secondary' },
+        ]}
+      />
+
+      <div className="page-shell max-w-7xl space-y-14">
 
         {forkSuccess && (
           <div className="p-4 rounded-xl bg-[rgba(74,222,128,0.08)] border border-green-900 text-[#4ade80] font-mono text-sm">
@@ -168,7 +173,7 @@ export default function MarketplacePage() {
               {featured.length === 0 ? (
                 <p className="font-mono text-sm text-gray-500">No featured agents yet. Deploy the first one!</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="page-grid cols-3">
                   {featured.map((agent) => (
                     <AgentCard key={agent.id} agent={agent} onFork={(a) => setForkAgent(a)} />
                   ))}
@@ -181,7 +186,7 @@ export default function MarketplacePage() {
               {trending.length === 0 ? (
                 <p className="font-mono text-sm text-gray-500">No trending agents yet.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="page-grid cols-3">
                   {trending.map((agent) => (
                     <AgentCard key={agent.id} agent={agent} onFork={(a) => setForkAgent(a)} />
                   ))}

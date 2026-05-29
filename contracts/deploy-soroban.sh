@@ -28,6 +28,14 @@ HORIZON_URL="https://horizon-testnet.stellar.org"
 RPC_URL="https://soroban-testnet.stellar.org"
 NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}"
 
+# Allow passing "mainnet" as first arg to switch endpoints
+if [ "${1:-}" = "mainnet" ]; then
+  STELLAR_NETWORK="public"
+  HORIZON_URL="https://horizon.stellar.org"
+  RPC_URL="https://soroban-rpc.stellar.org"
+  NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
+fi
+
 # ─────────────────────────────────────────────────────────────────────────────
 # UTILITY FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -118,6 +126,29 @@ build_agent_validator() {
   cd "$PROJECT_ROOT"
 }
 
+build_af_token() {
+  log_step "Building AF Token contract"
+
+  cd "$PROJECT_ROOT/contracts/af_token"
+
+  if [ ! -f "Cargo.toml" ]; then
+    log_error "Cargo.toml not found in af_token directory"
+    exit 1
+  fi
+
+  stellar contract build --optimize --package af-token
+
+  AF_WASM="target/wasm32v1-none/release/af_token.wasm"
+
+  if [ ! -f "$AF_WASM" ]; then
+    log_error "AF Token WASM build failed"
+    exit 1
+  fi
+
+  log_success "AF Token built: $(du -h "$AF_WASM" | cut -f1)"
+  cd "$PROJECT_ROOT"
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # DEPLOYMENT PHASE
 # ─────────────────────────────────────────────────────────────────────────────
@@ -170,6 +201,31 @@ deploy_validator() {
   log_info "Contract ID: $VALIDATOR_ID"
 
   echo "$VALIDATOR_ID"
+}
+
+deploy_af_token() {
+  log_step "Deploying AF Token to Stellar $STELLAR_NETWORK"
+
+  AF_WASM="$PROJECT_ROOT/contracts/af_token/target/wasm32v1-none/release/af_token.wasm"
+
+  log_info "Deploying WASM (this may take 30-60 seconds)..."
+
+  AF_ID=$(stellar contract deploy \
+    --wasm "$AF_WASM" \
+    --source "$STELLAR_ACCOUNT" \
+    --network "$STELLAR_NETWORK" \
+    --rpc-url "$RPC_URL" \
+    --network-passphrase "$NETWORK_PASSPHRASE")
+
+  if [ -z "$AF_ID" ]; then
+    log_error "Failed to deploy AF Token"
+    exit 1
+  fi
+
+  log_success "AF Token deployed!"
+  log_info "Contract ID: $AF_ID"
+
+  echo "$AF_ID"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -230,6 +286,7 @@ initialize_validator() {
 update_env_local() {
   local registry_id=$1
   local validator_id=$2
+  local af_id=${3:-}
   local env_file="$PROJECT_ROOT/.env.local"
 
   log_step "Updating .env.local with contract IDs"
@@ -253,6 +310,14 @@ update_env_local() {
     sed -i.tmp "s/^NEXT_PUBLIC_SOROBAN_VALIDATOR_ID=.*/NEXT_PUBLIC_SOROBAN_VALIDATOR_ID=$validator_id/" "$env_file"
   else
     echo "NEXT_PUBLIC_SOROBAN_VALIDATOR_ID=$validator_id" >> "$env_file"
+  fi
+
+  if [ -n "$af_id" ]; then
+    if grep -q "NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID" "$env_file"; then
+      sed -i.tmp "s/^NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID=.*/NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID=$af_id/" "$env_file"
+    else
+      echo "NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID=$af_id" >> "$env_file"
+    fi
   fi
 
   # Clean up temp files
@@ -286,17 +351,19 @@ main() {
   # Build phase
   build_agent_registry
   build_agent_validator
+  build_af_token
 
   # Deployment phase
   REGISTRY_ID=$(deploy_registry | tail -n1)
   VALIDATOR_ID=$(deploy_validator | tail -n1)
+  AF_TOKEN_ID=$(deploy_af_token | tail -n1)
 
   # Initialization phase
   initialize_registry "$REGISTRY_ID" "$ADMIN_ADDRESS" "$VALIDATOR_ID"
   initialize_validator "$VALIDATOR_ID" "$ADMIN_ADDRESS" "$REGISTRY_ID"
 
   # Update environment
-  update_env_local "$REGISTRY_ID" "$VALIDATOR_ID"
+  update_env_local "$REGISTRY_ID" "$VALIDATOR_ID" "$AF_TOKEN_ID"
 
   # Final summary
   log_step "Deployment Complete! ✨"

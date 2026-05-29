@@ -1,0 +1,26 @@
+{
+  "name": "Templated Demo Workflow",
+  "steps": [
+    {
+      "id": "fetch_market",
+      "agentId": "demo-echo",
+      "input": "Provide a concise market snapshot for XLM/USDC and mention one risk factor.",
+      "retries": 1,
+      "retryDelayMs": 500
+    },
+    {
+      "id": "synthesize_plan",
+      "agentId": "demo-echo",
+      "dependsOn": ["fetch_market"],
+      "input": {
+        "summary": "Use the previous step output directly: {{steps.fetch_market.output}}",
+        "meta": {
+          "source": "{{steps.fetch_market.output}}",
+          "latency": "{{steps.fetch_market.latencyMs}}"
+        }
+      },
+      "retries": 1,
+      "retryDelayMs": 500
+    }
+  ]
+}

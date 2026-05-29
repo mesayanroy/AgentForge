@@ -133,20 +133,31 @@ export async function POST(req: NextRequest) {
     let agentError: { message?: string; code?: string } | null = null;
 
     for (let attempt = 0; attempt < 8; attempt++) {
-      const { error } = await supabase.from('agents').insert(insertPayload);
-      if (!error) {
-        agentError = null;
+      try {
+        const res = await supabase.from('agents').insert(insertPayload);
+        // supabase-js may either throw or return { error }
+        // handle both shapes
+        // @ts-ignore
+        const maybeError = res?.error ?? (res && res.error) ?? null;
+        if (!maybeError) {
+          agentError = null;
+          break;
+        }
+
+        const error = maybeError as { message?: string; code?: string } | null;
+        const missingColumn = getMissingColumnName(error);
+        if (error && error.code === 'PGRST204' && missingColumn && missingColumn in insertPayload) {
+          delete insertPayload[missingColumn];
+          continue;
+        }
+
+        agentError = error;
+        break;
+      } catch (err) {
+        // Network or fetch failure — capture and break to fallback handling
+        agentError = { message: String(err), code: 'NETWORK' };
         break;
       }
-
-      const missingColumn = getMissingColumnName(error);
-      if (error.code === 'PGRST204' && missingColumn && missingColumn in insertPayload) {
-        delete insertPayload[missingColumn];
-        continue;
-      }
-
-      agentError = error;
-      break;
     }
 
     if (agentError) {
@@ -178,15 +189,32 @@ export async function POST(req: NextRequest) {
 
       console.error('Supabase agent insert error:', agentError);
 
+      // If permissions prevent insertion (RLS or limited role), fall back to demo
       if (agentError.code === '42501') {
-        return NextResponse.json(
-          {
-            error: 'Database permission denied – check SUPABASE_SERVICE_ROLE_KEY and that RLS is disabled on the agents table',
-            details: agentError.message,
-            key_mode: keyMode,
-          },
-          { status: 500 }
-        );
+        console.warn('[create] Permission denied inserting agent — falling back to demo store');
+        upsertDemoAgent({
+          id: agentId,
+          owner_wallet,
+          name,
+          description,
+          tags: tags || [],
+          model,
+          system_prompt,
+          tools: tools || [],
+          price_xlm: parseFloat(price_xlm) || 0.01,
+          visibility: visibility || 'public',
+          api_endpoint: apiEndpoint,
+          api_key: apiKey,
+        });
+        return NextResponse.json({
+          id: agentId,
+          api_key: apiKey,
+          api_endpoint: apiEndpoint,
+          message:
+            'Agent deployed (demo fallback – database permission denied). To persist agents, provide SUPABASE_SERVICE_ROLE_KEY or disable RLS on the agents table.',
+          storage_mode: 'demo_fallback',
+          warning: agentError.message,
+        });
       }
 
       return NextResponse.json(

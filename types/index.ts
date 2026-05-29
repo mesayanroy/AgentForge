@@ -12,7 +12,7 @@ export interface Agent {
   name: string;
   description?: string;
   tags?: string[];
-  model: 'openai-gpt4o-mini' | 'anthropic-claude-haiku';
+  model: 'openai-gpt4o-mini' | 'anthropic-claude-haiku' | 'mock-echo';
   system_prompt: string;
   tools: string[];
   price_xlm: number;

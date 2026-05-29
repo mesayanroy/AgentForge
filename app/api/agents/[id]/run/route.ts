@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 import Ably from 'ably';
+import { StrKey } from 'stellar-sdk';
 import { getDemoAgentById, incrementDemoAgentStats } from '@/lib/demo-agents';
 import { publish, TOPICS } from '@/lib/qstash';
 import type { MarketplaceActivityEvent } from '@/types/events';
@@ -33,6 +34,10 @@ function explorerUrl(txHash: string): string {
   return `https://stellar.expert/explorer/${network}/tx/${txHash}`;
 }
 
+function isValidStellarPublicKey(value: string): boolean {
+  return StrKey.isValidEd25519PublicKey(value);
+}
+
 async function getAgent(agentId: string) {
   if (!supabaseUrl || !supabaseServiceKey) {
     return getDemoAgentById(agentId);
@@ -49,10 +54,32 @@ async function getAgent(agentId: string) {
     return getDemoAgentById(agentId);
   }
 
-  return data;
+  if (data) {
+    return data;
+  }
+
+  // Keep local/demo IDs runnable even when connected DB has no matching row.
+  const demo = getDemoAgentById(agentId);
+  if (demo) {
+    return demo;
+  }
+
+  return null;
 }
 
 async function runAgentModel(model: string, systemPrompt: string, userInput: string): Promise<string> {
+  if (model === 'mock-echo') {
+    return JSON.stringify(
+      {
+        model,
+        summary: userInput.slice(0, 180),
+        prompt: systemPrompt.slice(0, 120),
+      },
+      null,
+      2
+    );
+  }
+
   if (model === 'openai-gpt4o-mini') {
     if (!process.env.OPENAI_API_KEY) {
       return '[Demo mode] OpenAI API key not configured. Your agent received the input and would normally respond here. Set OPENAI_API_KEY to enable live AI responses.';
@@ -132,7 +159,7 @@ export async function POST(
   const startTime = Date.now();
 
   try {
-    const agent = await getAgent(agentId);
+    let agent = await getAgent(agentId);
     if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
     }
@@ -142,6 +169,19 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    if (!isValidStellarPublicKey(agent.owner_wallet)) {
+      const demo = getDemoAgentById(agentId);
+      if (demo && isValidStellarPublicKey(demo.owner_wallet)) {
+        agent = demo;
+      } else {
+        return NextResponse.json(
+          { error: 'Agent owner wallet is invalid' },
+          { status: 500 }
+        );
+      }
+    }
+
     const priceXlm = Number(agent.price_xlm || 0);
     if (Number.isNaN(priceXlm) || priceXlm < 0) {
       return NextResponse.json({ error: 'Agent pricing configuration is invalid' }, { status: 500 });

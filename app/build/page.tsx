@@ -2,19 +2,27 @@
 
 import { motion } from 'framer-motion';
 import AgentBuilder from '@/components/AgentBuilder';
+import PageHero from '@/components/PageHero';
 
 export default function BuildPage() {
   return (
-    <div className="min-h-screen grid-bg">
-      <div className="max-w-2xl mx-auto px-4 py-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h1 className="font-syne text-4xl font-bold text-white mb-2">Build an Agent</h1>
-          <p className="text-gray-400 font-mono text-sm mb-10">
-            Deploy your AI agent on Stellar. 3 steps — configure, prompt, deploy.
-          </p>
+    <div className="page-theme min-h-screen">
+      <PageHero
+        eyebrow="Build"
+        title={<>Compose and deploy an agent runtime.</>}
+        description={<>Configure identity, permissions, workflow, and payout policy, then deploy to the Stellar execution layer.</>}
+        actions={[
+          { href: '/dashboard', label: 'Go to Dashboard', variant: 'secondary' },
+        ]}
+        stats={[
+          { label: 'Step 1', value: 'Configure' },
+          { label: 'Step 2', value: 'Simulate' },
+          { label: 'Step 3', value: 'Deploy' },
+        ]}
+      />
+
+      <div className="page-shell max-w-4xl">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="page-panel p-4 md:p-6">
           <AgentBuilder />
         </motion.div>
       </div>

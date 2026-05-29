@@ -1,0 +1,11 @@
+{
+  "title": "AgentForge Polymarket Dashboard",
+  "pairs": [
+    "XLM/USDC",
+    "BTC/USDC",
+    "ETH/USDC",
+    "SOL/USDC",
+    "AF$/USDC"
+  ],
+  "refreshIntervalMs": 3000
+}

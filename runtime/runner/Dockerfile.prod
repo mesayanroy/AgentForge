@@ -1,0 +1,9 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Only copy the minimal runner script
+COPY runtime/runner/runner-http.js ./runner-http.js
+
+# Use a lightweight base; Node 18 provides fetch
+ENTRYPOINT ["node", "/app/runner-http.js"]

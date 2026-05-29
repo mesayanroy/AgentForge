@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import CandlestickChart, { CloseEvent } from '@/components/CandlestickChart';
 import type { Agent } from '@/types';
+import PageHero from '@/components/PageHero';
 
 interface OHLC {
   ts: string;
@@ -375,11 +376,21 @@ export default function TradingPage() {
   const filteredAgents = agentCategory === 'all' ? AGENT_TEMPLATES : AGENT_TEMPLATES.filter((a) => a.category === agentCategory);
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-[1440px] mx-auto px-4 py-6 space-y-4">
+    <div className="page-theme min-h-screen">
+      <PageHero
+        eyebrow="Trading"
+        title={<>Trade and test strategies inside a professional execution workspace.</>}
+        description={<>Track live markets, simulate positions, and run agent templates within a polished Stellar-native trading interface.</>}
+        actions={[
+          { href: '/build', label: 'Build a Strategy' },
+          { href: '/dashboard', label: 'Go to Dashboard', variant: 'secondary' },
+        ]}
+      />
+
+      <div className="page-shell max-w-[1440px] space-y-4">
 
         {/* Token Pair Selector */}
-        <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
+        <div className="page-panel p-4 flex flex-wrap gap-2 overflow-x-auto pb-1">
           {TOKEN_PAIRS.map((pair) => {
             const tp = tokenPrices[pair.coinGeckoId];
             const change = tp?.change24h ?? 0;
@@ -400,7 +411,7 @@ export default function TradingPage() {
         </div>
 
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="page-panel p-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div>
               <h1 className="font-syne text-2xl font-bold text-white">{selectedPair.icon} {selectedPair.symbol}</h1>
@@ -458,7 +469,7 @@ export default function TradingPage() {
                 </AnimatePresence>
 
                 {/* Candlestick Price Chart */}
-                <div className="rounded-2xl border border-white/[0.07] bg-[rgba(5,5,12,0.85)] p-5">
+                <div className="page-panel p-5">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#00FFE5] animate-pulse" />

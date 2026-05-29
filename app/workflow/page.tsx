@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PageHero from '@/components/PageHero';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,11 @@ interface Task {
   id: string;
   label: string;
   status: 'idle' | 'running' | 'done' | 'error';
+  output?: string;
+}
+
+interface WorkflowPresetTask {
+  label: string;
   output?: string;
 }
 
@@ -250,6 +256,18 @@ const EXECUTOR_STEP_LABELS: Record<ExecutorStep, string> = {
   done: 'Done',
   error: 'Retry',
 };
+
+const DEMO_WORKFLOW_PRESET: WorkflowPresetTask[] = [
+  {
+    label: 'Map current XLM/USDC conditions and identify a single execution risk.',
+  },
+  {
+    label: 'Refine the prior analysis into a concise execution plan with one actionable trade-off.',
+  },
+  {
+    label: 'Package the result as a delivery-ready summary for the operator dashboard.',
+  },
+];
 
 const STELLAR_MEMO_MAX_LENGTH = 28;
 const STELLAR_POLL_INTERVAL_MS = 2_000;
@@ -768,6 +786,7 @@ export default function WorkflowPage() {
   // Strategy Notes state
   const [notes, setNotes] = useState('');
   const [notesSaved, setNotesSaved] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     const addr = localStorage.getItem('wallet_address');
@@ -871,13 +890,28 @@ export default function WorkflowPage() {
     ]);
   }
 
+  function loadDemoWorkflow() {
+    const nextTasks = DEMO_WORKFLOW_PRESET.map((task, index) => ({
+      id: `demo-${index + 1}`,
+      label: task.label,
+      status: 'idle' as const,
+      output: task.output,
+    }));
+
+    setDemoMode(true);
+    setTasks(nextTasks);
+    setTaskCount(0);
+    setPendingPayment(false);
+    setNewTask('');
+  }
+
   if (!walletAddress) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="page-theme min-h-screen flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-sm"
+          className="text-center max-w-sm page-panel p-8"
         >
           <div className="w-16 h-16 rounded-2xl bg-[rgba(0,255,229,0.1)] border border-[rgba(0,255,229,0.2)] flex items-center justify-center mx-auto mb-5">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00FFE5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -897,11 +931,108 @@ export default function WorkflowPage() {
   const colors = ['#00FFE5', '#FFB800', '#4ade80', '#f87171', '#a78bfa', '#fb923c', '#ffffff'];
 
   return (
-    <div className="min-h-screen px-6 py-8 space-y-6">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-syne text-3xl font-bold text-white mb-1">Workflow Studio</h1>
-        <p className="font-mono text-xs text-gray-500">Plan your agent tasks visually, then run them in sequence.</p>
-      </motion.div>
+    <div className="page-theme min-h-screen px-6 py-8 space-y-6">
+      <PageHero
+        eyebrow="Workflow"
+        title={<>Plan and execute agent tasks as a deterministic DAG.</>}
+        description={<>Use the canvas to break execution into steps, wire dependencies, and simulate the final flow before deployment.</>}
+        actions={[
+          { href: '/build', label: 'Create an Agent' },
+          { href: '/dashboard', label: 'Open Dashboard', variant: 'secondary' },
+        ]}
+      />
+
+      <section className="page-shell page-panel overflow-hidden">
+        <div className="relative rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(135deg,rgba(8,12,20,0.96),rgba(10,14,24,0.92)_42%,rgba(10,18,28,0.88))] p-6 md:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.42)]">
+          <div className="absolute inset-0 opacity-70 bg-[radial-gradient(circle_at_top_right,rgba(0,255,229,0.09),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,184,0,0.08),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_82%,rgba(255,255,255,0.02))]" />
+          <div className="absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(0,255,229,0.35),rgba(255,255,255,0.25),transparent)]" />
+          <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr] items-start">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)] px-3 py-1 text-[10px] font-mono uppercase tracking-[0.28em] text-white/55">
+                Execution Studio
+              </div>
+              <div>
+                <h2 className="font-syne text-[28px] md:text-[36px] font-semibold text-white leading-tight tracking-[-0.03em]">
+                  A premium execution box for orchestrating, simulating, and shipping agent workflows.
+                </h2>
+                <p className="mt-3 max-w-2xl text-[14px] md:text-[15px] text-white/52 leading-7">
+                  Compose a workflow like a production-grade operating environment: seed a demo preset, edit the canvas, queue tasks, and inspect payment-aware execution in one polished surface.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="page-panel-soft border border-[rgba(255,255,255,0.06)] px-4 py-3 bg-[rgba(255,255,255,0.025)]">
+                  <div className="text-[10px] uppercase tracking-[0.24em] text-white/34">Mode</div>
+                  <div className={`mt-2 text-sm font-semibold ${demoMode ? 'text-[#7efcf2]' : 'text-white'}`}>
+                    {demoMode ? 'Demo sequence loaded' : 'Live workspace'}
+                  </div>
+                </div>
+                <div className="page-panel-soft border border-[rgba(255,255,255,0.06)] px-4 py-3 bg-[rgba(255,255,255,0.025)]">
+                  <div className="text-[10px] uppercase tracking-[0.24em] text-white/34">Canvas</div>
+                  <div className="mt-2 text-sm font-semibold text-white">Deterministic DAG flow</div>
+                </div>
+                <div className="page-panel-soft border border-[rgba(255,255,255,0.06)] px-4 py-3 bg-[rgba(255,255,255,0.025)]">
+                  <div className="text-[10px] uppercase tracking-[0.24em] text-white/34">Execution</div>
+                  <div className="mt-2 text-sm font-semibold text-white">0x402 payment-aware runs</div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-1">
+                <button
+                  onClick={loadDemoWorkflow}
+                  className="cta-primary"
+                >
+                  Load Demo Workflow <span>→</span>
+                </button>
+                <a
+                  href="/docs#cli"
+                  className="cta-secondary"
+                >
+                  View CLI Guide
+                </a>
+                {demoMode && (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(74,222,128,0.18)] bg-[rgba(74,222,128,0.06)] px-3 py-2 text-[10px] font-mono uppercase tracking-[0.26em] text-[#7cf0a6] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7cf0a6] opacity-35" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#7cf0a6]" />
+                    </span>
+                    Demo workflow loaded
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="page-panel-soft relative overflow-hidden border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-5">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,255,229,0.08),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(255,184,0,0.06),transparent_30%)]" />
+              <div className="relative space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-white/34">Preset Preview</div>
+                    <div className="mt-1 font-syne text-base font-semibold text-white">Templated Demo Workflow</div>
+                  </div>
+                  <div className="rounded-full border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)] px-3 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-white/60">
+                    Live preset
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {DEMO_WORKFLOW_PRESET.map((task, index) => (
+                    <div key={task.label} className="flex items-start gap-3 rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.025)] px-4 py-3">
+                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] text-[10px] font-mono text-white/70">
+                        0{index + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-syne text-sm font-medium text-white">Step {index + 1}</div>
+                        <div className="mt-1 text-[12px] leading-6 text-white/52">{task.label}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Payment approval banner */}
       {pendingPayment && (
@@ -924,13 +1055,35 @@ export default function WorkflowPage() {
       )}
 
       {/* Two-column layout */}
+      <div className="page-shell max-w-[1440px]">
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
 
         {/* ── Drawing Canvas ── */}
         <div className="xl:col-span-3 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="font-mono text-xs text-gray-500 uppercase tracking-widest">Canvas</p>
+            <div className="flex items-center gap-3">
+                <p className="font-mono text-xs text-gray-500 uppercase tracking-[0.26em]">Canvas</p>
+              {demoMode && (
+                <motion.span
+                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className="inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.10)] bg-[rgba(255,255,255,0.04)] px-3 py-1 text-[10px] font-mono uppercase tracking-[0.26em] text-white/70"
+                >
+                  <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7cf0a6] opacity-35" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#7cf0a6]" />
+                  </span>
+                  Run Demo Workflow
+                </motion.span>
+              )}
+            </div>
             <div className="flex items-center gap-1">
+              {demoMode && (
+                <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-white/55">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#7cf0a6] shadow-[0_0_14px_rgba(124,240,166,0.55)]" />
+                  Workflow health: stable
+                </div>
+              )}
               <button onClick={undo} title="Undo" className="w-7 h-7 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.06)] text-xs font-mono">↩</button>
               <button onClick={redo} title="Redo" className="w-7 h-7 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-[rgba(255,255,255,0.06)] text-xs font-mono">↪</button>
               <button
@@ -986,14 +1139,48 @@ export default function WorkflowPage() {
           </div>
 
           {/* Canvas area */}
-          <div className="rounded-xl border border-[rgba(0,255,229,0.1)] bg-[rgba(0,0,0,0.4)] overflow-hidden" style={{ height: 420 }}>
-            <DrawingCanvas
-              elements={elements}
-              onAdd={addElement}
-              activeTool={activeTool}
-              activeColor={activeColor}
-              strokeWidth={strokeWidth}
+          <div className="relative overflow-hidden rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(2,6,16,0.88)] shadow-[0_28px_90px_rgba(0,0,0,0.56),inset_0_1px_0_rgba(255,255,255,0.04)]" style={{ height: 420 }}>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.11]"
+              style={{
+                backgroundImage:
+                  'linear-gradient(rgba(255,255,255,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.16) 1px, transparent 1px)',
+                backgroundSize: '28px 28px',
+                maskImage: 'linear-gradient(180deg, rgba(0,0,0,0.95), rgba(0,0,0,0.55) 70%, transparent)',
+                WebkitMaskImage: 'linear-gradient(180deg, rgba(0,0,0,0.95), rgba(0,0,0,0.55) 70%, transparent)',
+              }}
             />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -left-20 top-6 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(0,255,229,0.16),transparent_70%)] blur-2xl"
+              animate={{ x: [0, 14, 0], y: [0, 8, 0], opacity: [0.38, 0.72, 0.38] }}
+              transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-24 right-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(255,184,0,0.12),transparent_68%)] blur-3xl"
+              animate={{ x: [0, -12, 0], y: [0, -10, 0], opacity: [0.3, 0.62, 0.3] }}
+              transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-[linear-gradient(90deg,rgba(255,255,255,0.06),transparent)] opacity-0"
+              animate={{ x: ['-20%', '122%'], opacity: [0, 0.16, 0] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_12%,transparent_88%,rgba(255,255,255,0.015))]" />
+            <div className="relative h-full p-3 md:p-4">
+              <div className="h-full rounded-[22px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] backdrop-blur-[20px] overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <DrawingCanvas
+                  elements={elements}
+                  onAdd={addElement}
+                  activeTool={activeTool}
+                  activeColor={activeColor}
+                  strokeWidth={strokeWidth}
+                />
+              </div>
+            </div>
           </div>
 
           {/* File upload */}
@@ -1097,10 +1284,12 @@ export default function WorkflowPage() {
           <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-3 space-y-1">
             <p className="font-mono text-[10px] text-gray-500 uppercase tracking-widest mb-2">Info</p>
             <p className="font-mono text-[11px] text-gray-400">Tasks completed: <span className="text-white">{taskCount}</span></p>
+            <p className="font-mono text-[11px] text-gray-400">Mode: <span className={demoMode ? 'text-[#00FFE5]' : 'text-white'}>{demoMode ? 'Demo preset' : 'Live workspace'}</span></p>
             <p className="font-mono text-[11px] text-gray-400">Next payment gate: <span className="text-[#FFB800]">every 2 tasks</span></p>
             <p className="font-mono text-[11px] text-gray-400">Protocol: <span className="text-[#00FFE5]">0x402 · Testnet</span></p>
           </div>
         </div>
+      </div>
       </div>
 
       {/* ── Payment Executor ── */}

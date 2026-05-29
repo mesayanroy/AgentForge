@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import PageHero from '@/components/PageHero';
 
 const AF_TOKEN_CONTRACT = process.env.NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID || '';
 const HORIZON_URL = process.env.NEXT_PUBLIC_HORIZON_URL || 'https://horizon-testnet.stellar.org';
@@ -169,48 +170,24 @@ export default function FaucetPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050508] text-white py-20 px-4">
-      <div className="max-w-xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgba(0,255,229,0.2)] bg-[rgba(0,255,229,0.05)] mb-6">
-            <span className="text-[#00FFE5] text-sm font-mono">AF$ Faucet</span>
-            <span className="w-2 h-2 rounded-full bg-[#00FFE5] animate-pulse" />
-          </div>
-          <h1 className="text-4xl font-bold mb-4">
-            Claim <span className="text-[#00FFE5]">AF$ Tokens</span>
-          </h1>
-          <p className="text-white/60">
-            Get {FAUCET_AMOUNT} AF$ tokens up to {MAX_CLAIMS}× for free. Use them to trade,
-            stake, and test agents on the platform.
-          </p>
-        </motion.div>
+    <main className="page-theme min-h-screen text-white py-20 px-4">
+      <PageHero
+        eyebrow="Faucet"
+        title={<>Claim AF$ tokens for testing and deployment.</>}
+        description={<>Use the faucet to fund trading, staking, and agent trials on the platform. Claims are limited and tied to your Stellar wallet.</>}
+        actions={[
+          { href: '/build', label: 'Build an Agent' },
+          { href: '/dashboard', label: 'Open Dashboard', variant: 'secondary' },
+        ]}
+        stats={[
+          { label: 'Per Claim', value: `${FAUCET_AMOUNT} AF$` },
+          { label: 'Max Claims', value: `${MAX_CLAIMS}×` },
+          { label: 'Supply', value: '100M AF$' },
+        ]}
+      />
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {[
-            { label: 'Per Claim', value: `${FAUCET_AMOUNT} AF$`, color: '#00FFE5' },
-            { label: 'Max Claims', value: `${MAX_CLAIMS}×`, color: '#f59e0b' },
-            { label: 'Total Supply', value: '100M AF$', color: '#4ade80' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center">
-              <div className="text-xl font-bold" style={{ color: s.color }}>{s.value}</div>
-              <div className="text-xs text-white/40 mt-1">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Faucet Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-white/[0.08] bg-[rgba(5,5,8,0.9)] p-8"
-        >
+      <div className="page-shell max-w-xl">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="page-panel p-8">
           <div className="mb-6">
             <label className="block text-sm font-medium text-white/70 mb-2">
               Stellar Wallet Address

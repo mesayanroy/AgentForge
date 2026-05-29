@@ -5,7 +5,7 @@ import AppShell from "@/components/AppShell";
 import AblyNotifications from "@/components/AblyNotifications";
 
 export const metadata: Metadata = {
-  title: "AgentForge — AI Agent Marketplace on Stellar",
+  title: "AgentForge — Programmble agentic execution layer on Stellar",
   description:
     "Build, monetize, and deploy AI agents on the Stellar blockchain. Pay per request with 0x402 protocol.",
 };

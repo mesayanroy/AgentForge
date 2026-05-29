@@ -1,0 +1,10 @@
+{
+  "name": "Trader",
+  "model": "openai-gpt4o-mini",
+  "prompt": "Evaluate execution signals and prepare trade-ready instructions.",
+  "tasks": [
+    "evaluate",
+    "score",
+    "execute"
+  ]
+}

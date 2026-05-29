@@ -41,10 +41,7 @@
 //! - **Refund Support**: Failed confirmations can refund the requesting fee
 
 #![no_std]
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, vec, Address, BytesN, Env, Symbol,
-    IntoVal, Val,
-};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, BytesN, Env, Symbol};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ─── STORAGE CONFIGURATION ───────────────────────────────────────────────────────
@@ -135,7 +132,7 @@ pub struct FeeHistory {
 /// AgentRegistry. Uses Soroban's `invoke_contract` primitive for maximum flexibility
 /// and to avoid compile-time coupling between contracts.
 mod registry_client {
-    use soroban_sdk::{Address, Env, IntoVal, Symbol, Val};
+    use soroban_sdk::{Address, Env, IntoVal, Symbol};
 
     /// **register_agent**: Invoke `AgentRegistry::register_agent` to permanently
     /// record an agent on-chain. Called only after fee collection and signature
@@ -148,7 +145,7 @@ mod registry_client {
         price_xlm: i128,
         metadata_hash: &Symbol,
     ) {
-        let args: soroban_sdk::Vec<Val> = soroban_sdk::vec![
+        let args: soroban_sdk::Vec<soroban_sdk::Val> = soroban_sdk::vec![
             env,
             owner.into_val(env),
             agent_id.into_val(env),
@@ -165,7 +162,7 @@ mod registry_client {
     /// **agent_exists**: Non-panicking check for agent existence in registry.
     /// Returns `true` only if the agent is already registered.
     pub fn agent_exists(env: &Env, registry_addr: &Address, agent_id: &Symbol) -> bool {
-        let args: soroban_sdk::Vec<Val> = soroban_sdk::vec![env, agent_id.into_val(env)];
+        let args: soroban_sdk::Vec<soroban_sdk::Val> = soroban_sdk::vec![env, agent_id.into_val(env)];
         env.try_invoke_contract::<soroban_sdk::Val, soroban_sdk::Error>(
             registry_addr,
             &Symbol::new(env, "get_agent"),

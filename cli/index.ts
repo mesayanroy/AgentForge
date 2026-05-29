@@ -36,6 +36,28 @@ import {
   Horizon,
 } from 'stellar-sdk';
 
+function loadEnvFile(filePath = path.join(process.cwd(), '.env.local')): void {
+  try {
+    if (!fs.existsSync(filePath)) return;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const idx = trimmed.indexOf('=');
+      if (idx < 0) continue;
+      const key = trimmed.slice(0, idx).trim();
+      const value = trimmed.slice(idx + 1).trim();
+      if (key && (process.env[key] === undefined || process.env[key] === '')) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+loadEnvFile();
+
 // ─── Banner ───────────────────────────────────────────────────────────────────
 
 const BANNER = `
@@ -168,7 +190,7 @@ function isLocalApiBase(apiBase: string): boolean {
 function fallbackDemoAgent(): AgentRecord {
   return {
     id: '1',
-    owner_wallet: 'GABC1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234XYZ1',
+    owner_wallet: 'GBZTWIV3ISK4KRBHP2BUVUB4PVZ6CK3AWBYLQLAI2JKVX45U63CO4PLW',
     name: 'DeFi Analyst',
     description: 'Analyzes DeFi protocols, yields, and on-chain metrics in real time.',
     model: 'openai-gpt4o-mini',
@@ -561,6 +583,19 @@ a2aCmd
         console.log(chalk.gray('  Response will be delivered asynchronously.'));
       } catch (err) {
         spinner.fail(`Failed to queue A2A request: ${String(err)}`);
+        if (isLocalApiBase(apiBase)) {
+          console.log(chalk.yellow('  ⚠ Falling back to direct target-agent call in local mode.'));
+          const response = await runAgent(apiBase, toAgentId, opts.input, walletAddress);
+          if (response.error) {
+            console.log(chalk.red(`  ✗ Target agent error: ${response.error}`));
+            process.exit(1);
+          }
+          if (response.output) {
+            console.log(chalk.bold('Output:'));
+            console.log(response.output);
+          }
+          return;
+        }
         process.exit(1);
       }
     }
@@ -690,6 +725,115 @@ ANTHROPIC_API_KEY=
     console.log(chalk.gray('  4. agentforge dash'));
     console.log(chalk.gray('  5. agentforge agents run <agentId> --input "your prompt" --secret <STELLAR_SECRET>'));
     console.log('');
+  });
+
+program
+  .command('runtime')
+  .description('Local runtime utilities (development)')
+  .command('run <agentId>')
+  .description('Run an agent locally using the runtime runner')
+  .requiredOption('-i, --input <text>', 'Input prompt for the agent')
+  .option('--docker', 'Run the agent inside the Docker runner image')
+  .action(async (agentId: string, opts: { input: string; docker?: boolean }) => {
+    console.log('Starting local runtime run...');
+    try {
+      if (agentId === 'demo-echo') {
+        const output = JSON.stringify(
+          {
+            model: 'mock-echo',
+            summary: opts.input.slice(0, 180),
+            prompt: 'Echo back the input in a concise structured form.',
+          },
+          null,
+          2
+        );
+        console.log('--- RESULT ---');
+        console.log('requestId:', `cli-${Date.now()}`);
+        console.log('latencyMs:', 0);
+        console.log('output:\n', output);
+        return;
+      }
+
+      if (opts.docker) {
+        const child = await import('child_process');
+        const spawn = child.spawnSync('npx', ['-y', 'ts-node', '--project', 'tsconfig.json', 'runtime/runner/docker-runner.ts', agentId, opts.input], { stdio: 'inherit' });
+        if (spawn.status !== 0) process.exit(spawn.status ?? 1);
+        return;
+      }
+
+      // Prefer direct in-process execution by calling consumers.executeAgentLocally.
+      // If module resolution fails under the current ts-node mode, fall back below.
+      try {
+        const mod = await import('../consumers/agent-executor');
+        if (typeof mod.executeAgentLocally === 'function') {
+          const res = await mod.executeAgentLocally(agentId, opts.input, { requestId: `cli-${Date.now()}` });
+          console.log('--- RESULT ---');
+          console.log('requestId:', res.requestId);
+          console.log('latencyMs:', res.latencyMs);
+          console.log('output:\n', res.output);
+          return;
+        }
+      } catch {
+        // continue to fallback runner path
+      }
+
+      // Lightweight deterministic fallback for local demo agents.
+      try {
+        const demo = await import('../lib/demo-agents');
+        const found = typeof demo.getDemoAgentById === 'function' ? demo.getDemoAgentById(agentId) : null;
+        if (found?.model === 'mock-echo') {
+          const output = JSON.stringify(
+            {
+              model: found.model,
+              summary: opts.input.slice(0, 180),
+              prompt: String(found.system_prompt ?? '').slice(0, 120),
+            },
+            null,
+            2
+          );
+          console.log('--- RESULT ---');
+          console.log('requestId:', `cli-${Date.now()}`);
+          console.log('latencyMs:', 0);
+          console.log('output:\n', output);
+          return;
+        }
+      } catch {
+        // continue to fallback runner path
+      }
+
+      // Fallback to runner script
+      const child = await import('child_process');
+      const spawn = child.spawnSync('npx', ['-y', 'ts-node', '--project', 'tsconfig.json', 'runtime/runner/index.ts', agentId, opts.input], { stdio: 'inherit' });
+      if (spawn.status !== 0) process.exit(spawn.status ?? 1);
+    } catch (err) {
+      console.error('Local runtime failed:', err);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('workflow')
+  .description('Run workflows locally (development)')
+  .command('run <file>')
+  .description('Run a workflow JSON file locally')
+  .action(async (file: string) => {
+    try {
+      const child = await import('child_process');
+      const fs = await import('fs');
+      const runnerPath = path.join(process.cwd(), 'dist', 'orchestrator-runner.js');
+      let spawn;
+      if (fs.existsSync(runnerPath)) {
+        spawn = child.spawnSync('node', [runnerPath, file], { stdio: 'inherit' });
+      } else {
+        const script = `require('./orchestrator/orchestrator').runWorkflowFile(process.argv[1]).then(r=>console.log(JSON.stringify(r,null,2))).catch(e=>{console.error('Orchestrator error:', e); process.exit(1)});`;
+        spawn = child.spawnSync('npx', ['ts-node', '--transpile-only', '--project', 'tsconfig.json', '-e', script, file], { stdio: 'inherit' });
+      }
+      if (spawn.error) throw spawn.error;
+      if (spawn.status !== 0) process.exit(spawn.status ?? 1);
+    } catch (err) {
+      console.error('Workflow run failed:', err);
+      process.exit(1);
+    }
   });
 
 program

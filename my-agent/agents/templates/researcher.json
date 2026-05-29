@@ -1,0 +1,10 @@
+{
+  "name": "Researcher",
+  "model": "openai-gpt4o-mini",
+  "prompt": "Analyze markets, summarize opportunities, and return concise action items.",
+  "tasks": [
+    "scan",
+    "summarize",
+    "rank"
+  ]
+}
