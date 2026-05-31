@@ -217,6 +217,39 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // If offline or network resolution fails, gracefully fall back to local demo store
+      const message = (agentError.message || '').toLowerCase();
+      const isNetworkError = agentError.code === 'NETWORK' 
+        || message.includes('fetch failed') 
+        || message.includes('enotfound')
+        || message.includes('getaddrinfo');
+
+      if (isNetworkError) {
+        console.warn('[create] Supabase offline/network failure — falling back to demo store');
+        upsertDemoAgent({
+          id: agentId,
+          owner_wallet,
+          name,
+          description,
+          tags: tags || [],
+          model,
+          system_prompt,
+          tools: tools || [],
+          price_xlm: parseFloat(price_xlm) || 0.01,
+          visibility: visibility || 'public',
+          api_endpoint: apiEndpoint,
+          api_key: apiKey,
+        });
+        return NextResponse.json({
+          id: agentId,
+          api_key: apiKey,
+          api_endpoint: apiEndpoint,
+          message: 'Agent deployed (local demo store fallback — database is offline or unreachable)',
+          storage_mode: 'demo_fallback',
+          warning: agentError.message,
+        });
+      }
+
       return NextResponse.json(
         {
           error: 'Failed to persist deployed agent',

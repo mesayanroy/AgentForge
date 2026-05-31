@@ -1,0 +1,17 @@
+{
+  "balances": {
+    "USDC": 9687.025192744872,
+    "XLM": 52500
+  },
+  "trades": [
+    {
+      "id": "trade-mpu8ori4",
+      "timestamp": "2026-05-31T20:35:46.108Z",
+      "type": "BUY",
+      "pair": "XLM/USDC",
+      "size": 2500,
+      "price": 0.12518992290205122,
+      "pnl_percent": "0.0%"
+    }
+  ]
+}

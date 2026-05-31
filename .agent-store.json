@@ -26,6 +26,28 @@
       "updated_at": "2026-03-28T23:14:28.483Z"
     },
     {
+      "id": "demo-echo",
+      "owner_wallet": "GBZTWIV3ISK4KRBHP2BUVUB4PVZ6CK3AWBYLQLAI2JKVX45U63CO4PLW",
+      "name": "Demo Echo",
+      "description": "Deterministic local demo agent used for workflow templating smoke tests.",
+      "tags": [
+        "demo",
+        "workflow",
+        "mock"
+      ],
+      "model": "mock-echo",
+      "system_prompt": "Echo back the input in a concise structured form.",
+      "tools": [],
+      "price_xlm": 0,
+      "visibility": "public",
+      "api_endpoint": "http://localhost:3000/api/agents/demo-echo/run",
+      "total_requests": 0,
+      "total_earned_xlm": 0,
+      "is_active": true,
+      "created_at": "2026-05-31T00:57:02.616Z",
+      "updated_at": "2026-05-31T00:57:02.616Z"
+    },
+    {
       "id": "282bb8ad-bcd1-4222-9f10-5a5ec7b9b94d",
       "owner_wallet": "GARN7A6OJKPR3HAPVIKM6GRUD7KMEHYQ76VJJCO4AAKQ6ETEKFQPQ24T",
       "name": "arbitrage",
@@ -50,6 +72,28 @@
       "is_active": true,
       "created_at": "2026-03-28T23:14:28.954Z",
       "updated_at": "2026-03-28T23:14:28.954Z"
+    },
+    {
+      "id": "10b68ef7-a688-4144-a7e7-aebf6b5fbc93",
+      "owner_wallet": "GBZTWIV3ISK4KRBHP2BUVUB4PVZ6CK3AWBYLQLAI2JKVX45U63CO4PLW",
+      "name": "Market Arbitrageur",
+      "description": "Analyzes liquidity gaps and executes arbitrage",
+      "tags": [
+        "cli-built",
+        "openai"
+      ],
+      "model": "openai-gpt4o-mini",
+      "system_prompt": "You are an expert market arbitrage searcher on Stellar DEX.",
+      "tools": [],
+      "price_xlm": 0.02,
+      "visibility": "public",
+      "api_endpoint": "http://localhost:3000/api/agents/10b68ef7-a688-4144-a7e7-aebf6b5fbc93/run",
+      "api_key": "af_tiIeVO2t9kyBqQ2iZZMZEAbSRByydiBrLhP1MfzC",
+      "total_requests": 0,
+      "total_earned_xlm": 0,
+      "is_active": true,
+      "created_at": "2026-05-31T00:57:04.239Z",
+      "updated_at": "2026-05-31T00:57:04.239Z"
     }
   ]
 }

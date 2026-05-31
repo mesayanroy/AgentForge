@@ -48,7 +48,7 @@ const demoAgents = new Map<string, Agent>([
     '1',
     {
       id: '1',
-      owner_wallet: 'GBZTWIV3ISK4KRBHP2BUVUB4PVZ6CK3AWBYLQLAI2JKVX45U63CO4PLW',
+      owner_wallet: 'GARN7A6OJKPR3HAPVIKM6GRUD7KMEHYQ76VJJCO4AAKQ6ETEKFQPQ24T',
       name: 'DeFi Analyst',
       description: 'Analyzes DeFi protocols, yields, and on-chain metrics in real time.',
       tags: ['web3', 'finance', 'defi'],
@@ -69,7 +69,7 @@ const demoAgents = new Map<string, Agent>([
     'demo-echo',
     {
       id: 'demo-echo',
-      owner_wallet: 'GBZTWIV3ISK4KRBHP2BUVUB4PVZ6CK3AWBYLQLAI2JKVX45U63CO4PLW',
+      owner_wallet: 'GARN7A6OJKPR3HAPVIKM6GRUD7KMEHYQ76VJJCO4AAKQ6ETEKFQPQ24T',
       name: 'Demo Echo',
       description: 'Deterministic local demo agent used for workflow templating smoke tests.',
       tags: ['demo', 'workflow', 'mock'],

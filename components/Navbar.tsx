@@ -9,17 +9,13 @@ const BRAND_LOGO_SRC = '/brand/Screenshot 2026-04-22 220049.png';
 
 const navLinks = [
   { href: '/', label: 'Home' },
-  { href: '/build', label: 'Build' },
-  { href: '/agents', label: 'Agents' },
-  { href: '/workflow', label: 'Workflow' },
-  { href: '/marketplace', label: 'Marketplace' },
-];
-// Restore older top-level documentation and community links
-const extraLinks = [
+  { href: '/faucet', label: 'Faucet' },
   { href: '/docs', label: 'Docs' },
   { href: '/devs', label: 'Devs' },
   { href: '/about', label: 'About' },
 ];
+// Extra links are now consolidated
+const extraLinks: { href: string; label: string }[] = [];
 
 export default function Navbar() {
   const pathname = usePathname();

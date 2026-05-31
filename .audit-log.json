@@ -1,0 +1,36 @@
+[
+  {
+    "hash": "35e5b24e1a6b0baf62455d9e6f7b45583b254fad5dc58b7fe500b124f9cea882",
+    "payload": {
+      "tradeId": "trade-mpu8ori4",
+      "agentId": "1",
+      "walletAddress": "GBZTWIV3ISK4KRBHP2BUVUB4PVZ6CK3AWBYLQLAI2JKVX45U63CO4PLW",
+      "action": "BUY",
+      "size": 2500,
+      "price": 0.12518992290205122,
+      "pnl": "0.0%",
+      "balances": {
+        "USDC": 9687.025192744872,
+        "XLM": 52500
+      }
+    },
+    "timestamp": "2026-05-31T20:35:46.110Z"
+  },
+  {
+    "hash": "d02dd8b54bb237912ca7d91771b2eb72e480759f696a9c46748b1c3cc14428f9",
+    "payload": {
+      "tradeId": "trade-mpu8ipdp",
+      "agentId": "1",
+      "walletAddress": "GBZTWIV3ISK4KRBHP2BUVUB4PVZ6CK3AWBYLQLAI2JKVX45U63CO4PLW",
+      "action": "BUY",
+      "size": 2500,
+      "price": 0.1252068656681409,
+      "pnl": "0.0%",
+      "balances": {
+        "USDC": 9686.982835829647,
+        "XLM": 52500
+      }
+    },
+    "timestamp": "2026-05-31T20:31:03.422Z"
+  }
+]
