@@ -52,7 +52,9 @@ fi
 # Initialize temporary Stellar CLI identity & networks
 echo -e "${BLUE}▶ Configuring deployer signing keys & network settings...${NC}"
 source /root/.cargo/env
-stellar network add --rpc-url "https://mainnet.sorobanrpc.com" --network-passphrase "Public Global Stellar Network ; September 2015" mainnet 2>/dev/null || true
+stellar network rm mainnet 2>/dev/null || true
+stellar network rm testnet 2>/dev/null || true
+stellar network add --rpc-url "https://rpc.mainnet.stellar.gateway.fm" --network-passphrase "Public Global Stellar Network ; September 2015" mainnet 2>/dev/null || true
 stellar network add --rpc-url "https://soroban-testnet.stellar.org" --network-passphrase "Test SDF Network ; September 2015" testnet 2>/dev/null || true
 echo "$STELLAR_AGENT_SECRET" | stellar keys add deployer --overwrite --secret-key > /dev/null
 
@@ -85,13 +87,14 @@ echo -e "${GREEN}✓ Deployer account active! Live Balance:${NC} ${YELLOW}$BALAN
 # Build all contracts in cargo workspace to ensure binaries are fully updated
 echo -e "${BLUE}▶ Triggering optimized release build for all contracts...${NC}"
 cd "$CONTRACTS_DIR"
+export CARGO_TARGET_DIR="/tmp/agentforge_target"
 echo -e "  Cleaning stale build cache..."
 cargo clean
 RUSTFLAGS="-C target-feature=-reference-types" cargo build --target wasm32-unknown-unknown --release
 echo -e "${GREEN}✓ Cargo build complete! All target WASM files ready.${NC}"
 
 # Path to the compiled wasm binaries
-WASM_DIR="$CONTRACTS_DIR/target/wasm32-unknown-unknown/release"
+WASM_DIR="/tmp/agentforge_target/wasm32-unknown-unknown/release"
 
 # Function to query current balance
 get_current_balance() {
