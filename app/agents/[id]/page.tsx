@@ -282,8 +282,12 @@ const data = await res.json();`;
             </div>
             <div className="text-right space-y-2">
               <div>
-                <div className="text-[#FFB800] font-syne font-bold text-2xl md:text-3xl">{agent.price_xlm} XLM</div>
-                <div className="font-mono text-xs text-white/50">per request</div>
+                <div className="text-[#00FFE5] font-syne font-bold text-2xl md:text-3xl">
+                  {agent.price_xlm} XLM
+                </div>
+                <div className="text-white/40 text-xs font-mono mt-0.5">
+                  or {(agent.price_xlm * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AF$
+                </div>
               </div>
               {viewerWallet && viewerWallet === agent.owner_wallet && (
                 <button
@@ -403,7 +407,7 @@ const data = await res.json();`;
                 disabled={running || !input}
                 className="border border-white/20 rounded-2xl px-5 py-3 bg-[#00FFE5] text-black hover:bg-[#0ef2dc] font-bold text-sm disabled:opacity-50"
               >
-                {running ? 'Running...' : `Run (${agent.price_xlm} XLM)`}
+                {running ? 'Running...' : `Run (${agent.price_xlm} XLM / ${agent.price_xlm * 100} AF$)`}
               </button>
             </div>
 
@@ -430,12 +434,12 @@ const data = await res.json();`;
               <div className="space-y-2 text-sm text-white/85">
                 <div><strong>API Key:</strong> {runtimeInfo?.api_key || agent.api_key || 'N/A'}</div>
                 <div><strong>User Wallet:</strong> {lastSignerWallet || 'N/A'}</div>
-                <div><strong>Price:</strong> {agent.price_xlm} XLM</div>
-                <div><strong>Billed Last Run:</strong> {lastBilledXlm} XLM</div>
+                <div><strong>Price:</strong> {agent.price_xlm} XLM / {agent.price_xlm * 100} AF$</div>
+                <div><strong>Billed Last Run:</strong> {lastBilledXlm} XLM / {lastBilledXlm * 100} AF$</div>
                 <div><strong>Forked:</strong> {forkCount} times</div>
                 <div><strong>URL Endpoint:</strong> {runtimeInfo?.api_endpoint || agent.api_endpoint || 'N/A'}</div>
                 <div><strong>Total Requests:</strong> {totalRequests.toLocaleString()}</div>
-                <div><strong>Total Earned:</strong> {totalEarnedXlm} XLM</div>
+                <div><strong>Total Earned:</strong> {totalEarnedXlm} XLM / {totalEarnedXlm * 100} AF$</div>
               </div>
             </div>
 
@@ -467,7 +471,7 @@ const data = await res.json();`;
               <div className="text-[11px] text-white/55">Total Requests</div>
             </div>
             <div className="rounded-xl border border-white/15 bg-white/[0.03] p-3 text-center">
-              <div className="font-mono text-[#4ade80]">{totalEarnedXlm} XLM</div>
+              <div className="font-mono text-[#4ade80]">{totalEarnedXlm} XLM / {totalEarnedXlm * 100} AF$</div>
               <div className="text-[11px] text-white/55">Total Earned</div>
             </div>
             <div className="rounded-xl border border-white/15 bg-white/[0.03] p-3 text-center">

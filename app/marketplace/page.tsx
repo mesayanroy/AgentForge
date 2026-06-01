@@ -17,6 +17,8 @@ function ForkModal({ agent, onClose, onSuccess }: ForkModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [customName, setCustomName] = useState(`Fork of ${agent.name}`);
   const [customPrompt, setCustomPrompt] = useState(agent.system_prompt || '');
+  const [paymentMethod, setPaymentMethod] = useState<'xlm' | 'af'>('xlm');
+  
   const FORK_FEE_XLM = agent.price_xlm > 0 ? agent.price_xlm * 10 : 1;
 
   const handleFork = async () => {
@@ -42,24 +44,77 @@ function ForkModal({ agent, onClose, onSuccess }: ForkModalProps) {
       const senderAccount = await horizonServer.loadAccount(senderKey);
 
       const memo = `fork:${agent.id}`.slice(0, 28);
-      const tx = new StellarSdk.TransactionBuilder(senderAccount, { fee: StellarSdk.BASE_FEE, networkPassphrase })
-        .addOperation(StellarSdk.Operation.payment({
+      let txBuilder = new StellarSdk.TransactionBuilder(senderAccount, { fee: StellarSdk.BASE_FEE, networkPassphrase });
+
+      if (paymentMethod === 'af') {
+        const afTokenContractId = process.env.NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID || 'CDCW72YVMAE34IQSED3AQ7UHLKOWXLOMN2UQ2J5H4CKY357G2CHMOARL';
+        const amountStroops = BigInt(Math.round(FORK_FEE_XLM * 100 * 10_000_000));
+        
+        txBuilder.addOperation(
+          StellarSdk.Operation.invokeContractFunction({
+            contract: afTokenContractId,
+            function: 'transfer',
+            args: [
+              new StellarSdk.Address(senderKey).toScVal(),
+              new StellarSdk.Address(agent.owner_wallet).toScVal(),
+              StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }),
+            ],
+          })
+        );
+      } else {
+        txBuilder.addOperation(StellarSdk.Operation.payment({
           destination: agent.owner_wallet,
           asset: StellarSdk.Asset.native(),
           amount: FORK_FEE_XLM.toFixed(7),
-        }))
-        .addMemo(StellarSdk.Memo.text(memo))
-        .setTimeout(60)
-        .build();
+        }));
+      }
+
+      txBuilder.addMemo(StellarSdk.Memo.text(memo))
+        .setTimeout(paymentMethod === 'af' ? 180 : 60);
+
+      let tx = txBuilder.build();
+
+      if (paymentMethod === 'af') {
+        const sorobanRpcUrl = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || 
+          (isMainnet ? 'https://mainnet.sorobanrpc.com' : 'https://soroban-testnet.stellar.org');
+        const rpcServer = new StellarSdk.rpc.Server(sorobanRpcUrl, { allowHttp: true });
+        tx = await rpcServer.prepareTransaction(tx);
+      }
 
       const signedResult = await freighter.signTransaction(tx.toXDR(), { networkPassphrase });
       if (signedResult.error) throw new Error(String(signedResult.error));
 
       const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedResult.signedTxXdr, networkPassphrase);
-      const result = await horizonServer.submitTransaction(signedTx);
+      
+      let txHash: string;
+      if (paymentMethod === 'af') {
+        const sorobanRpcUrl = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || 
+          (isMainnet ? 'https://mainnet.sorobanrpc.com' : 'https://soroban-testnet.stellar.org');
+        const rpcServer = new StellarSdk.rpc.Server(sorobanRpcUrl, { allowHttp: true });
+        
+        const sendResult = await rpcServer.sendTransaction(signedTx);
+        if (!sendResult.hash) throw new Error('Transaction submitted but no hash returned.');
+        txHash = sendResult.hash;
+
+        let status: any = sendResult.status;
+        let txResult;
+        let attempts = 0;
+        while (status === 'PENDING' && attempts < 15) {
+          await new Promise((r) => setTimeout(r, 2000));
+          txResult = await rpcServer.getTransaction(txHash);
+          status = txResult.status;
+          attempts++;
+        }
+        if (status !== 'SUCCESS') {
+          throw new Error(`Soroban transfer failed with status: ${status}`);
+        }
+      } else {
+        const result = await horizonServer.submitTransaction(signedTx);
+        txHash = result.hash;
+      }
 
       setStep('done');
-      onSuccess(result.hash);
+      onSuccess(txHash);
     } catch (err) {
       const msg = String(err);
       setError(msg.startsWith('Error:') ? msg.slice(7).trim() : msg);
@@ -72,8 +127,41 @@ function ForkModal({ agent, onClose, onSuccess }: ForkModalProps) {
       <div className="w-full max-w-lg mx-4 rounded-2xl border border-[rgba(255,184,0,0.2)] bg-[#0a0a10] p-6"
         onClick={(e) => e.stopPropagation()}>
         <h2 className="font-syne text-xl font-bold text-white mb-1">Fork Agent</h2>
+        
+        {/* Currency Selector */}
+        <div className="flex bg-white/[0.02] border border-white/[0.06] rounded-xl p-1 mb-5 mt-4">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('xlm')}
+            disabled={step === 'paying'}
+            className={`flex-1 py-2 rounded-lg text-xs font-mono font-semibold transition-all ${
+              paymentMethod === 'xlm'
+                ? 'bg-gradient-to-r from-[#00FFE5]/20 to-[#00FFE5]/5 border border-[#00FFE5]/30 text-[#00FFE5]'
+                : 'text-gray-400 hover:text-white disabled:opacity-40'
+            }`}
+          >
+            Native XLM
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod('af')}
+            disabled={step === 'paying'}
+            className={`flex-1 py-2 rounded-lg text-xs font-mono font-semibold transition-all ${
+              paymentMethod === 'af'
+                ? 'bg-gradient-to-r from-[#FFB800]/20 to-[#FFB800]/5 border border-[#FFB800]/30 text-[#FFB800]'
+                : 'text-gray-400 hover:text-white disabled:opacity-40'
+            }`}
+          >
+            AF$ Token
+          </button>
+        </div>
+
         <p className="text-gray-400 text-sm mb-5">
-          Pay <span className="text-[#FFB800] font-bold">{FORK_FEE_XLM} XLM</span> to fork &quot;{agent.name}&quot; and customise it.
+          Pay {paymentMethod === 'xlm' ? (
+            <span className="text-[#00FFE5] font-bold">{FORK_FEE_XLM} XLM</span>
+          ) : (
+            <span className="text-[#FFB800] font-bold">{(FORK_FEE_XLM * 100).toLocaleString()} AF$</span>
+          )} to fork &quot;{agent.name}&quot; and customise it.
         </p>
 
         <div className="space-y-4 mb-5">
@@ -90,7 +178,14 @@ function ForkModal({ agent, onClose, onSuccess }: ForkModalProps) {
         </div>
 
         <div className="text-xs font-mono text-gray-500 mb-4 p-3 rounded bg-white/[0.02] border border-white/[0.06]">
-          <div className="flex justify-between"><span>Fork fee</span><span className="text-[#FFB800]">{FORK_FEE_XLM} XLM</span></div>
+          <div className="flex justify-between">
+            <span>Fork fee</span>
+            {paymentMethod === 'xlm' ? (
+              <span className="text-[#00FFE5] font-bold">{FORK_FEE_XLM} XLM</span>
+            ) : (
+              <span className="text-[#FFB800] font-bold">{(FORK_FEE_XLM * 100).toLocaleString()} AF$</span>
+            )}
+          </div>
           <div className="flex justify-between mt-1"><span>Destination</span><span className="text-white/70 truncate max-w-[200px]">{agent.owner_wallet}</span></div>
         </div>
 
@@ -109,8 +204,14 @@ function ForkModal({ agent, onClose, onSuccess }: ForkModalProps) {
             Cancel
           </button>
           <button onClick={handleFork} disabled={step === 'paying' || step === 'done'}
-            className="flex-1 py-2.5 text-sm font-mono bg-[#FFB800] text-black rounded-lg font-bold hover:bg-[#e6a600] transition-colors disabled:opacity-50">
-            {step === 'paying' ? 'Processing...' : step === 'done' ? 'Forked!' : `Fork & Pay ${FORK_FEE_XLM} XLM`}
+            className={`flex-1 py-2.5 text-sm font-mono rounded-lg font-bold transition-all disabled:opacity-50 ${
+              paymentMethod === 'xlm'
+                ? 'bg-[#00FFE5] text-black hover:bg-[#00e6ce]'
+                : 'bg-[#FFB800] text-black hover:bg-[#e6a600]'
+            }`}>
+            {step === 'paying' ? 'Processing...' : step === 'done' ? 'Forked!' : `Fork & Pay ${
+              paymentMethod === 'xlm' ? `${FORK_FEE_XLM} XLM` : `${(FORK_FEE_XLM * 100).toLocaleString()} AF$`
+            }`}
           </button>
         </div>
       </div>
@@ -143,12 +244,14 @@ export default function MarketplacePage() {
   const featured = agents.filter((a) => a.is_active && a.total_requests > 0).slice(0, 6);
   const trending = agents.filter((a) => a.is_active).slice(0, 3);
 
+  const isMainnet = process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet';
+
   return (
     <div className="page-theme min-h-screen">
       <PageHero
         eyebrow="Marketplace"
         title={<>Discover, buy, and fork live agents.</>}
-        description={<>Explore active agent listings, settle forks in XLM, and turn deployed agents into reusable products.</>}
+        description={<>Explore active agent listings, settle forks in XLM or AF$ tokens, and customize runtimes dynamically.</>}
         actions={[
           { href: '/build', label: 'Deploy an Agent' },
           { href: '/agents', label: 'View Agents', variant: 'secondary' },
@@ -159,7 +262,7 @@ export default function MarketplacePage() {
 
         {forkSuccess && (
           <div className="p-4 rounded-xl bg-[rgba(74,222,128,0.08)] border border-green-900 text-[#4ade80] font-mono text-sm">
-            ✓ Fork payment confirmed · Tx: <a href={`https://stellar.expert/explorer/testnet/tx/${forkSuccess}`}
+            ✓ Fork payment confirmed · Tx: <a href={`https://stellar.expert/explorer/${isMainnet ? 'public' : 'testnet'}/tx/${forkSuccess}`}
               target="_blank" rel="noreferrer" className="underline hover:text-green-300">{forkSuccess.slice(0, 20)}...</a>
           </div>
         )}

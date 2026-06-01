@@ -134,8 +134,31 @@ export async function verifyPaymentTransaction(
       }
     }
 
+    // 1. Check for Soroban AF$ Token Transfer using envelope XDR
+    const afTokenContractId = process.env.NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID || 'CDCW72YVMAE34IQSED3AQ7UHLKOWXLOMN2UQ2J5H4CKY357G2CHMOARL';
+    let totalPaidAf = 0;
+
+    try {
+      const signedTx = StellarSdk.TransactionBuilder.fromXDR(tx.envelope_xdr, NETWORK_PASSPHRASE);
+      for (const op of signedTx.operations) {
+        const opAny = op as any;
+        if (opAny.type === 'invokeContractFunction' && opAny.contract === afTokenContractId) {
+          if (opAny.function === 'transfer' && opAny.args && opAny.args.length >= 3) {
+            const toAddress = StellarSdk.scValToNative(opAny.args[1]);
+            const amountStroops = StellarSdk.scValToNative(opAny.args[2]);
+            if (toAddress === expectedDestination) {
+              totalPaidAf += Number(BigInt(amountStroops)) / 10_000_000;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[stellar] Failed to parse transaction envelope XDR for contract checks:', err);
+    }
+
+    // 2. Check for Native XLM payments via operations endpoint
     const ops = await server.operations().forTransaction(txHash).call();
-    let totalPaid = 0;
+    let totalPaidXlm = 0;
 
     for (const op of ops.records) {
       if (
@@ -143,16 +166,20 @@ export async function verifyPaymentTransaction(
         (op as StellarSdk.Horizon.ServerApi.PaymentOperationRecord).asset_type === 'native' &&
         (op as StellarSdk.Horizon.ServerApi.PaymentOperationRecord).to === expectedDestination
       ) {
-        totalPaid += parseFloat(
+        totalPaidXlm += parseFloat(
           (op as StellarSdk.Horizon.ServerApi.PaymentOperationRecord).amount
         );
       }
     }
 
-    if (totalPaid < expectedAmountXlm) {
+    const requiredAf = expectedAmountXlm * 100;
+    const isXlmValid = totalPaidXlm >= expectedAmountXlm;
+    const isAfValid = totalPaidAf >= requiredAf;
+
+    if (!isXlmValid && !isAfValid) {
       return {
         valid: false,
-        error: `Payment amount ${totalPaid} XLM is less than required ${expectedAmountXlm} XLM`,
+        error: `Payment amount insufficient. Paid ${totalPaidXlm} XLM (required: ${expectedAmountXlm} XLM) or ${totalPaidAf} AF$ (required: ${requiredAf} AF$)`,
       };
     }
 
@@ -180,5 +207,43 @@ export async function fundTestAccount(address: string): Promise<boolean> {
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+export async function getAfBalance(address: string): Promise<string> {
+  try {
+    const StellarSdk = await import('stellar-sdk');
+    const afTokenContractId = process.env.NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID || 'CDCW72YVMAE34IQSED3AQ7UHLKOWXLOMN2UQ2J5H4CKY357G2CHMOARL';
+    const sorobanRpcUrl = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || 'https://mainnet.sorobanrpc.com';
+    const rpcServer = new StellarSdk.rpc.Server(sorobanRpcUrl, { allowHttp: true });
+
+    const tx = new StellarSdk.TransactionBuilder(
+      new StellarSdk.Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '0'),
+      {
+        fee: '100',
+        networkPassphrase: process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet'
+          ? StellarSdk.Networks.PUBLIC
+          : StellarSdk.Networks.TESTNET,
+      }
+    )
+      .addOperation(
+        StellarSdk.Operation.invokeContractFunction({
+          contract: afTokenContractId,
+          function: 'balance',
+          args: [new StellarSdk.Address(address).toScVal()],
+        })
+      )
+      .setTimeout(30)
+      .build();
+
+    const simulation = await rpcServer.simulateTransaction(tx);
+    if (StellarSdk.rpc.Api.isSimulationSuccess(simulation) && simulation.result?.retval) {
+      const value = StellarSdk.scValToNative(simulation.result.retval);
+      const decimalValue = Number(BigInt(value)) / 10_000_000;
+      return decimalValue.toString();
+    }
+    return '0';
+  } catch {
+    return '0';
   }
 }

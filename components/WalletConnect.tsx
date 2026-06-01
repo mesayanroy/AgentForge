@@ -41,6 +41,7 @@ const WALLET_OPTIONS: WalletOption[] = [
 export default function WalletConnect() {
   const [address, setAddress] = useState<string | null>(null);
   const [balance, setBalance] = useState<string>('0');
+  const [afBalance, setAfBalance] = useState<string>('0');
   const [connecting, setConnecting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
@@ -57,11 +58,14 @@ export default function WalletConnect() {
 
   const fetchBalance = async (addr: string) => {
     try {
-      const { getXlmBalance } = await import('@/lib/stellar');
+      const { getXlmBalance, getAfBalance } = await import('@/lib/stellar');
       const bal = await getXlmBalance(addr);
       setBalance(parseFloat(bal).toFixed(2));
+      const afBal = await getAfBalance(addr);
+      setAfBalance(parseFloat(afBal).toFixed(1));
     } catch {
       setBalance('0');
+      setAfBalance('0');
     }
   };
 
@@ -160,6 +164,7 @@ export default function WalletConnect() {
   const disconnect = () => {
     setAddress(null);
     setBalance('0');
+    setAfBalance('0');
     localStorage.removeItem('wallet_address');
     localStorage.removeItem('wallet_type');
   };
@@ -171,6 +176,7 @@ export default function WalletConnect() {
           <div className="w-2 h-2 rounded-full bg-[#00FFE5] animate-pulse" />
           <span className="font-mono text-xs text-[#00FFE5]">{truncateAddress(address)}</span>
           <span className="font-mono text-xs text-gray-400">{balance} XLM</span>
+          <span className="font-mono text-xs text-[#00FFE5] font-bold">· {afBalance} AF$</span>
         </div>
         <button
           onClick={disconnect}

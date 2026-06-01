@@ -30,7 +30,6 @@ const STEP_LABELS: Record<PaymentStep, string> = {
 /** Extract the most useful human-readable message from a Stellar SDK error. */
 function extractStellarError(err: unknown): string {
   if (!err) return 'Unknown error';
-  // Horizon BadResponseError has .response?.data?.extras?.result_codes
   if (typeof err === 'object' && err !== null) {
     const e = err as Record<string, unknown>;
     try {
@@ -71,7 +70,6 @@ async function waitForLedgerConfirmation(
     }
     await new Promise((r) => setTimeout(r, 2_000));
   }
-  // Timed out, but submission was successful so we proceed anyway
 }
 
 export default function PaymentModal({
@@ -87,6 +85,7 @@ export default function PaymentModal({
   const [step, setStep] = useState<PaymentStep>('idle');
   const [error, setError] = useState<string | null>(null);
   const [txExplorerUrl, setTxExplorerUrl] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'xlm' | 'af'>('xlm');
 
   const paying = step !== 'idle' && step !== 'done' && step !== 'error';
 
@@ -128,24 +127,53 @@ export default function PaymentModal({
       const senderAccount = await horizonServer.loadAccount(senderKey);
 
       const memo = paymentMemo || `agent:${agentId}`;
-      const txBuilder = new StellarSdk.TransactionBuilder(senderAccount, {
+      let txBuilder = new StellarSdk.TransactionBuilder(senderAccount, {
         fee: StellarSdk.BASE_FEE,
         networkPassphrase,
-      })
-        .addOperation(
+      });
+
+      if (paymentMethod === 'af') {
+        const afTokenContractId = process.env.NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID || 'CDCW72YVMAE34IQSED3AQ7UHLKOWXLOMN2UQ2J5H4CKY357G2CHMOARL';
+        const amountStroops = BigInt(Math.round(priceXlm * 100 * 10_000_000));
+        
+        txBuilder.addOperation(
+          StellarSdk.Operation.invokeContractFunction({
+            contract: afTokenContractId,
+            function: 'transfer',
+            args: [
+              new StellarSdk.Address(senderKey).toScVal(),
+              new StellarSdk.Address(ownerAddress).toScVal(),
+              StellarSdk.nativeToScVal(amountStroops, { type: 'i128' }),
+            ],
+          })
+        );
+      } else {
+        txBuilder.addOperation(
           StellarSdk.Operation.payment({
             destination: ownerAddress,
             asset: StellarSdk.Asset.native(),
             amount: priceXlm.toFixed(7),
           })
-        )
-        .addMemo(StellarSdk.Memo.text(memo.slice(0, 28)))
-        .setTimeout(60)
-        .build();
+        );
+      }
+
+      txBuilder.addMemo(StellarSdk.Memo.text(memo.slice(0, 28)))
+        .setTimeout(paymentMethod === 'af' ? 180 : 60);
+
+      let tx = txBuilder.build();
+
+      if (paymentMethod === 'af') {
+        const sorobanRpcUrl = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || 
+          (isMainnet ? 'https://mainnet.sorobanrpc.com' : 'https://soroban-testnet.stellar.org');
+        const rpcServer = new StellarSdk.rpc.Server(sorobanRpcUrl, { allowHttp: true });
+        
+        // Prepare Soroban Transaction
+        tx = await rpcServer.prepareTransaction(tx);
+      }
 
       setStep('signing');
 
-      const xdr = txBuilder.toXDR();
+      const xdr = tx.toXDR();
       const signedResult = await freighter.signTransaction(xdr, { networkPassphrase });
       if (signedResult.error) throw new Error(String(signedResult.error));
       const signedXdr = signedResult.signedTxXdr;
@@ -153,17 +181,40 @@ export default function PaymentModal({
 
       setStep('submitting');
 
-      const result = await horizonServer.submitTransaction(signedTx);
-      const txHash = result.hash;
+      let txHash: string;
+      if (paymentMethod === 'af') {
+        const sorobanRpcUrl = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || 
+          (isMainnet ? 'https://mainnet.sorobanrpc.com' : 'https://soroban-testnet.stellar.org');
+        const rpcServer = new StellarSdk.rpc.Server(sorobanRpcUrl, { allowHttp: true });
+        
+        const sendResult = await rpcServer.sendTransaction(signedTx);
+        if (!sendResult.hash) throw new Error('Transaction submitted but no hash returned.');
+        txHash = sendResult.hash;
+
+        setStep('confirming');
+        let status: any = sendResult.status;
+        let txResult;
+        let attempts = 0;
+        while (status === 'PENDING' && attempts < 15) {
+          await new Promise((r) => setTimeout(r, 2000));
+          txResult = await rpcServer.getTransaction(txHash);
+          status = txResult.status;
+          attempts++;
+        }
+        if (status !== 'SUCCESS') {
+          throw new Error(`Soroban transfer failed with status: ${status}`);
+        }
+      } else {
+        const result = await horizonServer.submitTransaction(signedTx);
+        txHash = result.hash;
+
+        setStep('confirming');
+        await waitForLedgerConfirmation(horizonServer, txHash);
+      }
 
       // Build explorer URL for display
       const explorerNetwork = isMainnet ? 'public' : 'testnet';
       setTxExplorerUrl(`https://stellar.expert/explorer/${explorerNetwork}/tx/${txHash}`);
-
-      // Wait for the transaction to be queryable on Horizon before handing
-      // the hash back to the run route (avoids "Transaction not found" on verify).
-      setStep('confirming');
-      await waitForLedgerConfirmation(horizonServer, txHash);
 
       setStep('done');
       onPaymentSuccess(txHash, senderKey);
@@ -193,16 +244,48 @@ export default function PaymentModal({
             className="w-full max-w-md mx-4 rounded-2xl border border-[rgba(0,255,229,0.2)] bg-[#0a0a10] p-6"
           >
             <h2 className="font-syne text-xl font-bold text-white mb-1">Payment Required</h2>
-            <p className="text-gray-400 text-sm mb-6">402 — Pay-per-request via Stellar</p>
+            <p className="text-gray-400 text-sm mb-5">402 — Pay-per-request Protocol</p>
+
+            {/* Currency Selector */}
+            <div className="flex bg-white/[0.02] border border-white/[0.06] rounded-xl p-1 mb-5">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('xlm')}
+                disabled={paying}
+                className={`flex-1 py-2 rounded-lg text-xs font-mono font-semibold transition-all ${
+                  paymentMethod === 'xlm'
+                    ? 'bg-gradient-to-r from-[#00FFE5]/20 to-[#00FFE5]/5 border border-[#00FFE5]/30 text-[#00FFE5]'
+                    : 'text-gray-400 hover:text-white disabled:opacity-40'
+                }`}
+              >
+                Native XLM
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('af')}
+                disabled={paying}
+                className={`flex-1 py-2 rounded-lg text-xs font-mono font-semibold transition-all ${
+                  paymentMethod === 'af'
+                    ? 'bg-gradient-to-r from-[#FFB800]/20 to-[#FFB800]/5 border border-[#FFB800]/30 text-[#FFB800]'
+                    : 'text-gray-400 hover:text-white disabled:opacity-40'
+                }`}
+              >
+                AF$ Token
+              </button>
+            </div>
 
             <div className="space-y-3 mb-6 font-mono text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Agent</span>
-                <span className="text-white">{agentName}</span>
+                <span className="text-white truncate max-w-[200px]">{agentName}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Amount</span>
-                <span className="text-[#FFB800] font-bold">{priceXlm} XLM</span>
+                {paymentMethod === 'xlm' ? (
+                  <span className="text-[#00FFE5] font-bold">{(priceXlm).toFixed(4)} XLM</span>
+                ) : (
+                  <span className="text-[#FFB800] font-bold">{(priceXlm * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AF$</span>
+                )}
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Network</span>
@@ -220,8 +303,14 @@ export default function PaymentModal({
 
             {/* Step progress */}
             {paying && (
-              <div className="mb-4 p-3 rounded bg-[rgba(0,255,229,0.06)] border border-[rgba(0,255,229,0.2)] text-[#00FFE5] text-xs font-mono flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#00FFE5] animate-pulse shrink-0" />
+              <div className={`mb-4 p-3 rounded border text-xs font-mono flex items-center gap-2 ${
+                paymentMethod === 'xlm'
+                  ? 'bg-[rgba(0,255,229,0.06)] border-[rgba(0,255,229,0.2)] text-[#00FFE5]'
+                  : 'bg-[rgba(255,184,0,0.06)] border-[rgba(255,184,0,0.2)] text-[#FFB800]'
+              }`}>
+                <span className={`w-2 h-2 rounded-full animate-pulse shrink-0 ${
+                  paymentMethod === 'xlm' ? 'bg-[#00FFE5]' : 'bg-[#FFB800]'
+                }`} />
                 {STEP_LABELS[step]}
               </div>
             )}
@@ -257,7 +346,11 @@ export default function PaymentModal({
               <button
                 onClick={handlePay}
                 disabled={paying}
-                className="flex-1 py-2.5 text-sm font-mono bg-[#00FFE5] text-black rounded-lg font-bold hover:bg-[#00e6ce] transition-colors disabled:opacity-50"
+                className={`flex-1 py-2.5 text-sm font-mono rounded-lg font-bold transition-all ${
+                  paymentMethod === 'xlm'
+                    ? 'bg-[#00FFE5] hover:bg-[#00e6ce] text-black disabled:opacity-50'
+                    : 'bg-[#FFB800] hover:bg-[#e6a600] text-black disabled:opacity-50'
+                }`}
               >
                 {STEP_LABELS[step]}
               </button>
