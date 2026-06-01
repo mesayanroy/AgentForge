@@ -24,8 +24,8 @@ async function main() {
     try {
       mod = await import('../../consumers/agent-executor');
     } catch {
-      const tsEntry = new URL('../../consumers/agent-executor.ts', import.meta.url).href;
-      mod = await import(tsEntry);
+      const targetPath = path.resolve(__dirname, '../../consumers/agent-executor.ts');
+      mod = require(targetPath);
     }
     if (typeof mod.executeAgentLocally !== 'function') {
       console.error('consumers/agent-executor does not export executeAgentLocally');

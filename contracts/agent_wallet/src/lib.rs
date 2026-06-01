@@ -1,106 +1,52 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};
-
-#[contracttype]
-#[derive(Clone)]
-pub struct WalletState {
-    pub owner: Address,
-    pub spend_limit_stroops: i128,
-    pub nonce: u64,
-}
-
-#[contracttype]
-pub enum DataKey {
-    State,
-    AllowedContract(Address),
-    AllowedDex(Symbol),
-}
+use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, IntoVal};
 
 #[contract]
 pub struct AgentWallet;
 
-impl AgentWallet {
-    fn require_owner(env: &Env, actor: &Address) {
-        let state: WalletState = env.storage().instance().get(&DataKey::State).expect("wallet not initialized");
-        assert!(state.owner == actor.clone(), "owner only");
-        actor.require_auth();
-    }
-
-    fn is_contract_allowed(env: &Env, contract: &Address) -> bool {
-        env.storage()
-            .persistent()
-            .get::<DataKey, bool>(&DataKey::AllowedContract(contract.clone()))
-            .unwrap_or(false)
-    }
-}
-
 #[contractimpl]
 impl AgentWallet {
-    pub fn initialize(env: Env, owner: Address, spend_limit_stroops: i128) {
+    pub fn initialize(env: Env, owner: Address, _spend_limit_stroops: i128) {
         owner.require_auth();
-
         assert!(
-            env.storage().instance().get::<DataKey, WalletState>(&DataKey::State).is_none(),
+            !env.storage().instance().has(&Symbol::new(&env, "owner")),
             "already initialized"
         );
+        env.storage().instance().set(&Symbol::new(&env, "owner"), &owner);
+    }
 
-        env.storage().instance().set(
-            &DataKey::State,
-            &WalletState {
-                owner,
-                spend_limit_stroops,
-                nonce: 0,
-            },
+    pub fn withdraw(
+        env: Env,
+        actor: Address,
+        token: Address,
+        to: Address,
+        amount_stroops: i128,
+    ) {
+        let owner: Address = env
+            .storage()
+            .instance()
+            .get(&Symbol::new(&env, "owner"))
+            .expect("wallet not initialized");
+        
+        assert!(owner == actor, "owner only");
+        actor.require_auth();
+        
+        let args: soroban_sdk::Vec<soroban_sdk::Val> = soroban_sdk::vec![
+            &env,
+            env.current_contract_address().into_val(&env),
+            to.into_val(&env),
+            amount_stroops.into_val(&env),
+        ];
+        
+        env.invoke_contract::<()>(
+            &token,
+            &Symbol::new(&env, "transfer"),
+            args,
         );
     }
 
-    pub fn set_spend_limit(env: Env, actor: Address, spend_limit_stroops: i128) {
-        Self::require_owner(&env, &actor);
-
-        let mut state: WalletState = env.storage().instance().get(&DataKey::State).unwrap();
-        state.spend_limit_stroops = spend_limit_stroops;
-        state.nonce += 1;
-        env.storage().instance().set(&DataKey::State, &state);
-    }
-
-    pub fn allow_contract(env: Env, actor: Address, contract: Address) {
-        Self::require_owner(&env, &actor);
-        env.storage().persistent().set(&DataKey::AllowedContract(contract), &true);
-    }
-
-    pub fn revoke_contract(env: Env, actor: Address, contract: Address) {
-        Self::require_owner(&env, &actor);
-        env.storage().persistent().remove(&DataKey::AllowedContract(contract));
-    }
-
-    pub fn allow_dex(env: Env, actor: Address, dex: Symbol) {
-        Self::require_owner(&env, &actor);
-        env.storage().persistent().set(&DataKey::AllowedDex(dex), &true);
-    }
-
-    pub fn revoke_dex(env: Env, actor: Address, dex: Symbol) {
-        Self::require_owner(&env, &actor);
-        env.storage().persistent().remove(&DataKey::AllowedDex(dex));
-    }
-
-    pub fn authorize_spend(
-        env: Env,
-        actor: Address,
-        contract: Address,
-        amount_stroops: i128,
-    ) -> bool {
-        Self::require_owner(&env, &actor);
-
-        let state: WalletState = env.storage().instance().get(&DataKey::State).unwrap();
-        assert!(amount_stroops > 0, "amount must be positive");
-        assert!(amount_stroops <= state.spend_limit_stroops, "spend limit exceeded");
-        assert!(Self::is_contract_allowed(&env, &contract), "contract not allowed");
-
-        true
-    }
-
-    pub fn state(env: Env) -> WalletState {
-        env.storage().instance().get(&DataKey::State).unwrap()
+    pub fn owner(env: Env) -> Address {
+        env.storage().instance().get(&Symbol::new(&env, "owner")).unwrap()
     }
 }

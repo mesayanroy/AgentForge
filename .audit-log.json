@@ -1,5 +1,22 @@
 [
   {
+    "hash": "4a5b3cd3e48bf1757514bda562674eafd5b4ead2e5eec45055cfcc575f4915c0",
+    "payload": {
+      "tradeId": "trade-mpvg79xz",
+      "agentId": "30cbc1b8-9ba7-4d99-9e25-484c7d86ca33",
+      "walletAddress": "GCK5L4DAV67YSSYKFWRCELY2BDODO5UURWD42QM7HR4ORQWSORMS3JHE",
+      "action": "BUY",
+      "size": 2500,
+      "price": 0.1251600451500347,
+      "pnl": "0.0%",
+      "balances": {
+        "USDC": 9687.099887124914,
+        "XLM": 52500
+      }
+    },
+    "timestamp": "2026-06-01T16:53:53.311Z"
+  },
+  {
     "hash": "35e5b24e1a6b0baf62455d9e6f7b45583b254fad5dc58b7fe500b124f9cea882",
     "payload": {
       "tradeId": "trade-mpu8ori4",

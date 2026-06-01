@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (!['openai-gpt4o-mini', 'anthropic-claude-haiku'].includes(model)) {
+    if (!['openai-gpt4o-mini', 'anthropic-claude-haiku', 'mock-echo'].includes(model)) {
       return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
     }
 
