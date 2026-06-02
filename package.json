@@ -23,6 +23,7 @@
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^15.5.4",
     "@stellar/freighter-api": "^6.0.1",
+    "@stellar/stellar-sdk": "^15.1.0",
     "@supabase/supabase-js": "^2.99.2",
     "@types/three": "^0.183.1",
     "@upstash/qstash": "^2.10.1",
@@ -36,7 +37,6 @@
     "react": "^18",
     "react-dom": "^18",
     "recharts": "^3.8.1",
-    "stellar-sdk": "^13.3.0",
     "three": "^0.183.2",
     "uuid": "^13.0.0"
   },

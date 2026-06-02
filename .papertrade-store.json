@@ -1,9 +1,36 @@
 {
   "balances": {
-    "USDC": 9687.099887124914,
-    "XLM": 52500
+    "USDC": 8748.75231192369,
+    "XLM": 60000
   },
   "trades": [
+    {
+      "id": "trade-mpvksxzi",
+      "timestamp": "2026-06-01T19:02:42.702Z",
+      "type": "BUY",
+      "pair": "XLM/USDC",
+      "size": 2500,
+      "price": 0.1251724368964061,
+      "pnl_percent": "0.0%"
+    },
+    {
+      "id": "trade-mpvkqlhc",
+      "timestamp": "2026-06-01T19:00:53.184Z",
+      "type": "BUY",
+      "pair": "XLM/USDC",
+      "size": 2500,
+      "price": 0.1250657836431561,
+      "pnl_percent": "0.0%"
+    },
+    {
+      "id": "trade-mpvjvp2t",
+      "timestamp": "2026-06-01T18:36:51.509Z",
+      "type": "BUY",
+      "pair": "XLM/USDC",
+      "size": 2500,
+      "price": 0.12510080954092753,
+      "pnl_percent": "0.0%"
+    },
     {
       "id": "trade-mpvg79xz",
       "timestamp": "2026-06-01T16:53:53.303Z",

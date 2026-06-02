@@ -1,5 +1,56 @@
 [
   {
+    "hash": "ce4359b00e60bea60e9aa1f2b0036dfa6207500e136e764d1c6c41135f4c471d",
+    "payload": {
+      "tradeId": "trade-mpvksxzi",
+      "agentId": "30cbc1b8-9ba7-4d99-9e25-484c7d86ca33",
+      "walletAddress": "GCK5L4DAV67YSSYKFWRCELY2BDODO5UURWD42QM7HR4ORQWSORMS3JHE",
+      "action": "BUY",
+      "size": 2500,
+      "price": 0.1251724368964061,
+      "pnl": "0.0%",
+      "balances": {
+        "USDC": 8748.75231192369,
+        "XLM": 60000
+      }
+    },
+    "timestamp": "2026-06-01T19:02:42.705Z"
+  },
+  {
+    "hash": "7f5a8b279abb84207734748531ca41267830a15011ffa83f75aa6ab69b015c63",
+    "payload": {
+      "tradeId": "trade-mpvkqlhc",
+      "agentId": "30cbc1b8-9ba7-4d99-9e25-484c7d86ca33",
+      "walletAddress": "GCK5L4DAV67YSSYKFWRCELY2BDODO5UURWD42QM7HR4ORQWSORMS3JHE",
+      "action": "BUY",
+      "size": 2500,
+      "price": 0.1250657836431561,
+      "pnl": "0.0%",
+      "balances": {
+        "USDC": 9061.683404164705,
+        "XLM": 57500
+      }
+    },
+    "timestamp": "2026-06-01T19:00:53.186Z"
+  },
+  {
+    "hash": "1f918f9dfbed54ebdc211dfb47d5736b46149f03c091dc08217bee7b45672e42",
+    "payload": {
+      "tradeId": "trade-mpvjvp2t",
+      "agentId": "1",
+      "walletAddress": "GCK5L4DAV67YSSYKFWRCELY2BDODO5UURWD42QM7HR4ORQWSORMS3JHE",
+      "action": "BUY",
+      "size": 2500,
+      "price": 0.12510080954092753,
+      "pnl": "0.0%",
+      "balances": {
+        "USDC": 9374.347863272595,
+        "XLM": 55000
+      }
+    },
+    "timestamp": "2026-06-01T18:36:51.511Z"
+  },
+  {
     "hash": "4a5b3cd3e48bf1757514bda562674eafd5b4ead2e5eec45055cfcc575f4915c0",
     "payload": {
       "tradeId": "trade-mpvg79xz",

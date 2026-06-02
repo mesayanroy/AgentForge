@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as StellarSdk from 'stellar-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk';
 
 const AF_TOKEN_CONTRACT = process.env.NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID || 'CDCW72YVMAE34IQSED3AQ7UHLKOWXLOMN2UQ2J5H4CKY357G2CHMOARL';
 const HORIZON_URL = process.env.NEXT_PUBLIC_HORIZON_URL || 'https://horizon.stellar.org';

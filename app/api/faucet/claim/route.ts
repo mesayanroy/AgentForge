@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Keypair, Networks, Asset, Memo, TransactionBuilder, Operation, Horizon } from 'stellar-sdk';
+import { Keypair, Networks, Asset, Memo, TransactionBuilder, Operation, Horizon } from '@stellar/stellar-sdk';
 import Ably from 'ably';
 
 const FAUCET_MAX_CLAIMS = 3;

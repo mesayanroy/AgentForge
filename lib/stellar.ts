@@ -1,4 +1,4 @@
-import * as StellarSdk from 'stellar-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk';
 
 const HORIZON_URL = process.env.NEXT_PUBLIC_HORIZON_URL || 'https://horizon-testnet.stellar.org';
 const NETWORK_PASSPHRASE = process.env.NEXT_PUBLIC_STELLAR_NETWORK === 'mainnet'
@@ -142,13 +142,33 @@ export async function verifyPaymentTransaction(
       const signedTx = StellarSdk.TransactionBuilder.fromXDR(tx.envelope_xdr, NETWORK_PASSPHRASE);
       for (const op of signedTx.operations) {
         const opAny = op as any;
-        if (opAny.type === 'invokeContractFunction' && opAny.contract === afTokenContractId) {
-          if (opAny.function === 'transfer' && opAny.args && opAny.args.length >= 3) {
-            const toAddress = StellarSdk.scValToNative(opAny.args[1]);
-            const amountStroops = StellarSdk.scValToNative(opAny.args[2]);
-            if (toAddress === expectedDestination) {
-              totalPaidAf += Number(BigInt(amountStroops)) / 10_000_000;
+
+        let contractId = '';
+        let functionName = '';
+        let opArgs: any[] = [];
+
+        if (opAny.type === 'invokeContractFunction') {
+          contractId = opAny.contract;
+          functionName = opAny.function;
+          opArgs = opAny.args || [];
+        } else if (opAny.type === 'invokeHostFunction' && opAny.func) {
+          try {
+            const funcValue = opAny.func.value();
+            if (funcValue) {
+              contractId = StellarSdk.Address.fromScAddress(funcValue.contractAddress()).toString();
+              functionName = funcValue.functionName().toString();
+              opArgs = funcValue.args() || [];
             }
+          } catch (e) {
+            console.warn('[stellar] Failed to parse invokeHostFunction properties:', e);
+          }
+        }
+
+        if (contractId === afTokenContractId && functionName === 'transfer' && opArgs.length >= 3) {
+          const toAddress = StellarSdk.scValToNative(opArgs[1]);
+          const amountStroops = StellarSdk.scValToNative(opArgs[2]);
+          if (toAddress === expectedDestination) {
+            totalPaidAf += Number(BigInt(amountStroops)) / 10_000_000;
           }
         }
       }
@@ -212,7 +232,7 @@ export async function fundTestAccount(address: string): Promise<boolean> {
 
 export async function getAfBalance(address: string): Promise<string> {
   try {
-    const StellarSdk = await import('stellar-sdk');
+    const StellarSdk = await import('@stellar/stellar-sdk');
     const afTokenContractId = process.env.NEXT_PUBLIC_AF_TOKEN_CONTRACT_ID || 'CDCW72YVMAE34IQSED3AQ7UHLKOWXLOMN2UQ2J5H4CKY357G2CHMOARL';
     const sorobanRpcUrl = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || 'https://mainnet.sorobanrpc.com';
     const rpcServer = new StellarSdk.rpc.Server(sorobanRpcUrl, { allowHttp: true });

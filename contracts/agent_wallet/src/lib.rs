@@ -7,13 +7,13 @@ pub struct AgentWallet;
 
 #[contractimpl]
 impl AgentWallet {
-    pub fn initialize(env: Env, owner: Address, _spend_limit_stroops: i128) {
+    pub fn initialize(env: Env, owner: Address) {
         owner.require_auth();
-        assert!(
-            !env.storage().instance().has(&Symbol::new(&env, "owner")),
-            "already initialized"
-        );
-        env.storage().instance().set(&Symbol::new(&env, "owner"), &owner);
+        let key = Symbol::new(&env, "owner");
+        if env.storage().instance().has(&key) {
+            panic!();
+        }
+        env.storage().instance().set(&key, &owner);
     }
 
     pub fn withdraw(
@@ -23,13 +23,11 @@ impl AgentWallet {
         to: Address,
         amount_stroops: i128,
     ) {
-        let owner: Address = env
-            .storage()
-            .instance()
-            .get(&Symbol::new(&env, "owner"))
-            .expect("wallet not initialized");
-        
-        assert!(owner == actor, "owner only");
+        let key = Symbol::new(&env, "owner");
+        let owner: Address = env.storage().instance().get(&key).unwrap();
+        if owner != actor {
+            panic!();
+        }
         actor.require_auth();
         
         let args: soroban_sdk::Vec<soroban_sdk::Val> = soroban_sdk::vec![
@@ -47,6 +45,7 @@ impl AgentWallet {
     }
 
     pub fn owner(env: Env) -> Address {
-        env.storage().instance().get(&Symbol::new(&env, "owner")).unwrap()
+        let key = Symbol::new(&env, "owner");
+        env.storage().instance().get(&key).unwrap()
     }
 }

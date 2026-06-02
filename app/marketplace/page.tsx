@@ -25,7 +25,7 @@ function ForkModal({ agent, onClose, onSuccess }: ForkModalProps) {
     setStep('paying');
     setError(null);
     try {
-      const StellarSdk = await import('stellar-sdk');
+      const StellarSdk = await import('@stellar/stellar-sdk');
       const freighter = await import('@stellar/freighter-api');
 
       const conn = await freighter.isConnected();

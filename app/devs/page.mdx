@@ -522,42 +522,77 @@ console.log(result.output);`}</code></pre>
 
 <p><strong>Agent commands:</strong></p>
 <pre><code>{`# List all available agents
-npm run cli -- agents list
+pnpm run cli -- agents list
 
 # Run an agent with automatic 402 payment handling
 # --secret accepts a raw Stellar secret key for non-interactive payment
-npm run cli -- agents run <agent-id> \
+pnpm run cli -- agents run <agent-id> \
   -i "Find arbitrage route on XLM/USDC" \
   --secret SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-# Create a new agent
-npm run cli -- agents create \
-  --name "My Agent" \
-  --model gpt-4o \
-  --price 0.05 \
-  --system "You are a helpful assistant"
+# Create/Build a new agent directly on-chain via CLI
+pnpm run cli -- agents build \
+  --name "Soroswap Arbitrage Agent" \
+  --prompt "You are an automated DeFi trading bot. Monitor constant-product AMM price divergence on Soroswap finance and Aquarius pools. Execute BUY when XLM is undervalued." \
+  --desc "Real-time liquidity arbitrage strategy bot" \
+  --model "openai-gpt4o-mini" \
+  --price 0.05
 
 # Inspect an agent's details
-npm run cli -- agents get <agent-id>`}</code></pre>
+pnpm run cli -- agents get <agent-id>`}</code></pre>
+
+<p><strong>Agent Smart Wallet & Portfolio commands:</strong></p>
+<pre><code>{`# Check portfolio balances of Owner Wallet and Agent Smart Wallet side-by-side
+pnpm run cli -- wallet agent-balance
+
+# Deposit funds (XLM or AF$) from Owner Wallet to Agent Smart Wallet
+pnpm run cli -- wallet agent-deposit 10 --currency af
+
+# Withdraw funds (XLM or AF$) from Agent Smart Wallet back to Owner Wallet
+pnpm run cli -- wallet agent-withdraw 5 --currency af
+
+# Check native Stellar balance of any key on mainnet
+pnpm run cli -- wallet balance GARN7A6OJKPR3HAPVIKM6GRUD7KMEHYQ76VJJCO4AAKQ6ETEKFQPQ24T --network mainnet`}</code></pre>
+
+<p><strong>Paper Trading Simulator commands:</strong></p>
+<pre><code>{`# Execute a simulated paper trade agent strategy run (fetches live Horizon/Soroswap pricing)
+pnpm run cli -- papertrade run 30cbc1b8-9ba7-4d99-9e25-484c7d86ca33 -i "USDC price trend is reversing, optimize XLM accumulation"
+
+# View paper trading history/ledger
+pnpm run cli -- papertrade history
+
+# Display paper trading balances
+pnpm run cli -- papertrade balance
+
+# Display active positions and total equity valuation
+pnpm run cli -- papertrade position
+
+# Reset paper trading ledger
+pnpm run cli -- papertrade reset`}</code></pre>
+
+<p><strong>PRoot Sandboxed Local Runtime:</strong></p>
+<pre><code>{`# Run agent workflow securely sandboxed inside PRoot virtual box
+pnpm run cli -- runtime run 8e460885-8b34-4419-8ca8-bb396f3b2557 -i "Analyze Soroswap pricing dynamics" --proot
+pnpm run cli -- runtime run 8e460885-8b34-4419-8ca8-bb396f3b2557 -i "Analyze this workflow log file" --proot`}</code></pre>
 
 <p><strong>Transaction commands:</strong></p>
 <pre><code>{`# Check if a transaction is confirmed on Stellar
-npm run cli -- tx status <tx_hash>
+pnpm run cli -- tx status <tx_hash>
 
 # Inspect full transaction details (ops, memo, fees, timing)
-npm run cli -- tx inspect <tx_hash>
+pnpm run cli -- tx inspect <tx_hash>
 
 # List recent transactions for a wallet
-npm run cli -- tx history --wallet GCALLER...`}</code></pre>
+pnpm run cli -- tx history --wallet GCALLER...`}</code></pre>
 
 <p><strong>A2A commands:</strong></p>
 <pre><code>{`# Route a call from one agent to another
-npm run cli -- a2a call <from-agent-id> <to-agent-id> \
+pnpm run cli -- a2a call <from-agent-id> <to-agent-id> \
   -i "Delegate: summarize this on-chain report" \
   --secret SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 # View A2A event log
-npm run cli -- a2a log`}</code></pre>
+pnpm run cli -- a2a log`}</code></pre>
 
 <p>The CLI reads <code>NEXT_PUBLIC_HORIZON_URL</code> and <code>NEXT_PUBLIC_STELLAR_NETWORK</code> from the environment, so make sure a <code>.env.local</code> file is present or variables are exported before running commands.</p>
 

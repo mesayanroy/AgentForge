@@ -40,7 +40,7 @@ import {
   scValToNative,
   rpc,
   Account,
-} from 'stellar-sdk';
+} from '@stellar/stellar-sdk';
 
 function loadEnvFile(filePath = path.join(process.cwd(), '.env.local')): void {
   try {
@@ -626,11 +626,17 @@ agentsCmd
 
       // Load agents to find owner wallet for 0x402 target address
       let payeeAddress = 'GARN7A6OJKPR3HAPVIKM6GRUD7KMEHYQ76VJJCO4AAKQ6ETEKFQPQ24T';
+      let agentPriceXlm = 0.01;
       try {
         const agents = await fetchAgents(apiBase);
         const agent = agents.find((a) => a.id === agentId);
-        if (agent && agent.owner_wallet) {
-          payeeAddress = agent.owner_wallet;
+        if (agent) {
+          if (agent.owner_wallet) {
+            payeeAddress = agent.owner_wallet;
+          }
+          if (typeof agent.price_xlm === 'number') {
+            agentPriceXlm = agent.price_xlm;
+          }
         }
       } catch {
         // ignore fallback to default owner
@@ -642,13 +648,16 @@ agentsCmd
 
       let micropaymentTxHash = '';
       if (queryCount % 2 === 0) {
+        const requiredAf = agentPriceXlm * 100;
+        const amountStroops = Math.round(requiredAf * 10_000_000);
+
         console.log('');
         console.log(chalk.bold.yellow('╔═════════════════════════════════════════════════════════════╗'));
         console.log(chalk.bold.yellow('║') + chalk.bold.white('          ⚡ AUTOMATIC 0x402 MICROPAYMENT DEDUCTION          ') + chalk.bold.yellow('║'));
         console.log(chalk.bold.yellow('╠═════════════════════════════════════════════════════════════╣'));
         console.log(chalk.bold.yellow('║') + `  Payer Wallet: ${chalk.gray(truncate(agentWalletContractId, 18).padEnd(42))}  ` + chalk.bold.yellow('║'));
         console.log(chalk.bold.yellow('║') + `  Payee Wallet: ${chalk.gray(truncate(payeeAddress, 18).padEnd(42))}  ` + chalk.bold.yellow('║'));
-        console.log(chalk.bold.yellow('║') + `  Deduction   : ${chalk.bold.green('0.10 AF$ (0x402 Micropayment Protocol)'.padEnd(42))}  ` + chalk.bold.yellow('║'));
+        console.log(chalk.bold.yellow('║') + `  Deduction   : ${chalk.bold.green(`${requiredAf.toFixed(2)} AF$ (0x402 Micropayment Protocol)`.padEnd(42))}  ` + chalk.bold.yellow('║'));
         console.log(chalk.bold.yellow('╚═════════════════════════════════════════════════════════════╝'));
         console.log('');
 
@@ -657,9 +666,8 @@ agentsCmd
           process.exit(1);
         }
 
-        const micSpinner = ora('Deducting 0.10 AF$ from Agent Smart Wallet contract...').start();
+        const micSpinner = ora(`Deducting ${requiredAf.toFixed(2)} AF$ from Agent Smart Wallet contract...`).start();
         const userAddress = Keypair.fromSecret(secretKey).publicKey();
-        const amountStroops = 1_000_000; // 0.10 AF$
         const args = [
           new Address(userAddress).toScVal(),
           new Address(afTokenId).toScVal(),

@@ -350,7 +350,50 @@ pnpm cli -- tx inspect <txHash>
 # A2A routed call
 pnpm cli -- a2a call <fromAgentId> <toAgentId> \
   -i "Delegate: analyze this orderbook" \
-  --secret SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`}</code></pre>
+  --secret SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# ─── On-Chain Agent Wallet Management ───
+# Check portfolio balances of Owner Wallet and Agent Smart Wallet side-by-side
+pnpm cli -- wallet agent-balance
+
+# Deposit funds (XLM or AF$) from Owner Wallet to Agent Smart Wallet
+pnpm cli -- wallet agent-deposit 10 --currency af
+
+# Withdraw funds (XLM or AF$) from Agent Smart Wallet back to Owner Wallet
+pnpm cli -- wallet agent-withdraw 5 --currency af
+
+# Check native Stellar balance of any key on mainnet
+pnpm cli -- wallet balance GARN7A6OJKPR3HAPVIKM6GRUD7KMEHYQ76VJJCO4AAKQ6ETEKFQPQ24T --network mainnet
+
+# ─── Paper Trading Simulator ───
+# Execute a simulated paper trade agent strategy run (fetches live Horizon/Soroswap pricing)
+pnpm cli -- papertrade run 30cbc1b8-9ba7-4d99-9e25-484c7d86ca33 -i "USDC price trend is reversing, optimize XLM accumulation"
+
+# View paper trading history/ledger
+pnpm cli -- papertrade history
+
+# Display paper trading balances
+pnpm cli -- papertrade balance
+
+# Display active positions and total equity valuation
+pnpm cli -- papertrade position
+
+# Reset paper trading ledger
+pnpm cli -- papertrade reset
+
+# ─── Agent Building & Deployment ───
+# Build and register a custom agent directly from CLI
+pnpm cli -- agents build \
+  --name "Soroswap Arbitrage Agent" \
+  --prompt "You are an automated DeFi trading bot. Monitor constant-product AMM price divergence on Soroswap finance and Aquarius pools. Execute BUY when XLM is undervalued." \
+  --desc "Real-time liquidity arbitrage strategy bot" \
+  --model "openai-gpt4o-mini" \
+  --price 0.05
+
+# ─── PRoot Sandboxed Local Runtime ───
+# Run agent workflow securely sandboxed inside PRoot virtual box
+pnpm cli -- runtime run 8e460885-8b34-4419-8ca8-bb396f3b2557 -i "Analyze Soroswap pricing dynamics" --proot
+pnpm cli -- runtime run 8e460885-8b34-4419-8ca8-bb396f3b2557 -i "Analyze this workflow log file" --proot`}</code></pre>
 </div>
 
 <div className="docs-tip">If a faucet or payment step reports <span className="docs-inline-code">invalid encoded string</span>, the wallet address is not a valid Stellar public key. Use a Freighter address that starts with <span className="docs-inline-code">G</span>.</div>

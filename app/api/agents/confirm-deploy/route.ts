@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as StellarSdk from 'stellar-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk';
 import crypto from 'node:crypto';
 import {
   persistDeploymentToDatabase,

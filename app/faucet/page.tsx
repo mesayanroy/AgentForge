@@ -93,7 +93,7 @@ export default function FaucetPage() {
   }
 
   async function claimAfTokensWithFreighter(): Promise<string> {
-    const StellarSdk = await import('stellar-sdk');
+    const StellarSdk = await import('@stellar/stellar-sdk');
     const freighter = await import('@stellar/freighter-api');
 
     const connection = await freighter.isConnected();
@@ -168,7 +168,7 @@ export default function FaucetPage() {
     setSwapTxHash(null);
 
     try {
-      const StellarSdk = await import('stellar-sdk');
+      const StellarSdk = await import('@stellar/stellar-sdk');
       const freighter = await import('@stellar/freighter-api');
 
       // 1. Freighter pre-flight

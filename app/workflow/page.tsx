@@ -299,7 +299,7 @@ function extractStellarError(err: unknown): string {
 }
 
 async function waitForLedger(
-  horizonServer: import('stellar-sdk').Horizon.Server,
+  horizonServer: import('@stellar/stellar-sdk').Horizon.Server,
   txHash: string,
   timeoutMs = 30_000
 ): Promise<void> {
@@ -358,7 +358,7 @@ function PaymentExecutorSection({ walletAddress }: { walletAddress: string }) {
     setInvoice(null);
 
     try {
-      const StellarSdk = await import('stellar-sdk');
+      const StellarSdk = await import('@stellar/stellar-sdk');
       const freighter = await import('@stellar/freighter-api');
 
       const connResult = await freighter.isConnected();

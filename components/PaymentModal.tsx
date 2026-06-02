@@ -56,7 +56,7 @@ function extractStellarError(err: unknown): string {
 
 /** Poll Horizon until the transaction appears on the ledger (up to 30 s). */
 async function waitForLedgerConfirmation(
-  horizonServer: import('stellar-sdk').Horizon.Server,
+  horizonServer: import('@stellar/stellar-sdk').Horizon.Server,
   txHash: string,
   timeoutMs = 30_000
 ): Promise<void> {
@@ -94,7 +94,7 @@ export default function PaymentModal({
     setError(null);
     setTxExplorerUrl(null);
     try {
-      const StellarSdk = await import('stellar-sdk');
+      const StellarSdk = await import('@stellar/stellar-sdk');
       const freighter = await import('@stellar/freighter-api');
 
       // Check Freighter is installed and connected

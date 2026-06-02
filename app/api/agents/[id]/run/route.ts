@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 import Ably from 'ably';
-import { StrKey } from 'stellar-sdk';
+import { StrKey } from '@stellar/stellar-sdk';
 import { getDemoAgentById, incrementDemoAgentStats } from '@/lib/demo-agents';
 import { publish, TOPICS } from '@/lib/qstash';
 import type { MarketplaceActivityEvent } from '@/types/events';

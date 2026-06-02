@@ -1,14 +1,106 @@
-# AgentForge — An Web 3 Agentic AI Infrastructure On-chain
-Where user can Ideate , build , own , monitize web3 agents via deploying agent Onchain.
+# AgentForge — The Execution Layer for Autonomous Agents on Stellar
+Where users can Ideate, Build, Own, and Monetize Web3 AI agents via secure, on-chain execution sandboxes.
 
 [![CI / CD](https://github.com/mesayanroy/0x402-pubsub/actions/workflows/ci.yml/badge.svg)](https://github.com/mesayanroy/0x402-pubsub/actions/workflows/ci.yml)
 
-AgentForge is solving Automation On-chain. An Agentic AI Infrastructure where user can ideate, build, own , monitize via deploying agent Onchain . Become the Righter owner of your agents credibility & ownership , Monetization . Along with Developers toolkit to build and use thier agents in thier own dapp/project with better deployment environment locally with CLI and executing AI agents with verifiable payment rails on Stellar.
+---
 
-https://www.loom.com/share/f4e989d847ca4beb9b104e4a5d4c8ae4
+## 📺 Project Introduction & Video Demo
 
-<img width="1497" height="1006" alt="Screenshot 2026-04-23 044825" src="https://github.com/user-attachments/assets/37f932cb-8fc0-4b77-887c-81311416ccbf" />
+[![AgentForge Pitch & Demo](https://img.youtube.com/vi/WlxBo90rBvU/maxresdefault.jpg)](https://youtu.be/WlxBo90rBvU)
+*Watch Sayan Roy introduce AgentForge and demonstrate the Web App, CLI, and on-chain workflow sandboxing: [https://youtu.be/WlxBo90rBvU](https://youtu.be/WlxBo90rBvU)*
 
+---
+
+## 🎙️ The AgentForge Vision
+
+**Hello everyone, I'm Sayan Roy, and today I'm excited to introduce AgentForge.**
+
+As AI agents become more capable, developers and traders face a growing infrastructure problem. Running autonomous agents requires cloud servers, storage, monitoring systems, execution environments, security controls, and payment infrastructure. These services are often expensive, fragmented, and difficult to manage.
+
+Agent developers spend more time maintaining infrastructure than building agent logic, while traders lack a secure and programmable environment to deploy, test, and automate strategies. Existing solutions are typically centralized, costly to scale, difficult to audit, and provide limited agent autonomy, identity, and payment coordination. As a result, deploying and operating intelligent agents remains inaccessible for many builders and traders.
+
+### Our Solution
+AgentForge solves this by providing a **Stellar-native execution layer** where agents can own identities, execute workflows inside isolated **PRoot sandboxes**, interact with DeFi protocols, receive programmable payments, and operate through a unified command-line experience.
+
+Instead of renting expensive cloud infrastructure or manually managing execution environments, developers can deploy agents directly into AgentForge's programmable execution layer.
+
+AgentForge combines:
+* **Agent Identity** & decentralized ownership
+* **Workflow Orchestration** via DAG graphs
+* **Sandboxed Execution** using low-overhead local PRoot environments
+* **Programmable Payments** & automated agent micropayments
+* **Agent Smart Wallets** for direct asset control and withdrawals
+* **Auditability** via direct on-chain transaction verifications
+* **Stellar-native Automation** for decentralized, serverless execution economics
+
+### Why Stellar?
+We chose Stellar because it provides exactly what autonomous agents need:
+1. **Fast transaction finality** (3-5 second ledgers)
+2. **Extremely low fees** (100 stroops standard fee)
+3. **Soroban smart contracts** (verifiable Rust logic on-chain)
+4. **Native asset support** (XLM, USDC, and custom tokens like AF$)
+5. **Developer-friendly infrastructure** (Horizon & Soroban RPC)
+6. **Scalable execution economics** 
+
+Stellar allows agents to operate efficiently while keeping execution and payment costs low enough for real-world adoption.
+
+---
+
+## 🔗 Deployed Smart Contracts (Stellar Mainnet)
+
+AgentForge is fully deployed and active on **Stellar Mainnet**. The system consists of 6 interlocking smart contracts that manage identity, validation, payment routing, and agent wallets:
+
+1. **AF$ Token Contract**
+   * **Contract ID**: `CDCW72YVMAE34IQSED3AQ7UHLKOWXLOMN2UQ2J5H4CKY357G2CHMOARL`
+   * *Utility token for micropayment settling (1 XLM = 100 AF$).*
+2. **Agent Registry Contract**
+   * **Contract ID**: `CAOOSHR64NP2HIFMQE4LYLWAXPJM5VEUH6W7DYGQURHPM2W2GZDZPAW6`
+   * *Canonical index storing agent pricing and ownership.*
+3. **Agent Validator Contract**
+   * **Contract ID**: `CDR4EEFL7OTXIJHD5ZR24J2VCO7THYIE3LGGRXJJY7W4WPCQ2QRO5ZY7`
+   * *Validates deploy intent and enforces validation fees (5 XLM).*
+4. **Payment Router Contract**
+   * **Contract ID**: `CCPXCIERUHUJNBJITLR3MWKXTRTJ5E4ET2TEYGSXV72FRJS3RVAHNX3Q`
+   * *Routes payments between owners and client runs.*
+5. **Execution Manager Contract**
+   * **Contract ID**: `CB6RDLOQFBJDFDQLX6QXS27F7QRZ3BIUADK5NJ33KUI24PMA7AIYZRVD`
+   * *Coordinates sandboxed workflow steps and task fees.*
+6. **Agent Smart Wallet Contract**
+   * **Contract ID**: `CBEDEV6LHEXBZRP37H46HYXXWOYXSQVAUY6KG66SIYYUKFMEZCV3MEXF`
+   * *Provides secure, on-chain custody and owner-authenticated withdrawals (custom Rust contract optimized down to 1,288 bytes).*
+
+---
+
+## ⛓️ Cryptographic Proofs & Mainnet Evidence
+
+All operations are fully settled and verified on-chain. Below are live transaction proofs on **Stellar Mainnet** for all contract actions:
+
+### 1. Smart Contract Deployment & Initialization
+* **WASM Upload (Install Code)**
+  * *Resource Fee*: `3.7307589 XLM` (Optimized WASM size: 1,288 bytes)
+  * *Tx Hash*: [`6b4095fdf5a122d5c74023eaa0846b42a969a9ab46edfd0176f1ca1d8d5b8ca1`](https://stellar.expert/explorer/public/tx/6b4095fdf5a122d5c74023eaa0846b42a969a9ab46edfd0176f1ca1d8d5b8ca1)
+* **Instance Creation (Deploy Wallet)**
+  * *Resource Fee*: `0.2014522 XLM`
+  * *Tx Hash*: [`3db896d250aa7a46e1f26bf63119db30279e2fd24bd84135d99d2f5b40a986f6`](https://stellar.expert/explorer/public/tx/3db896d250aa7a46e1f26bf63119db30279e2fd24bd84135d99d2f5b40a986f6)
+* **Wallet Initialization**
+  * *Tx Hash*: [`1323b879212f999e80f9b800fc4ccdf4243160d8bc8ddcb878615b3669372425`](https://stellar.expert/explorer/public/tx/1323b879212f999e80f9b800fc4ccdf4243160d8bc8ddcb878615b3669372425)
+
+### 2. Smart Wallet Token Transfers
+* **AF$ Token Deposit (250.00 AF$ from Owner to Agent)**
+  * *Tx Hash*: [`8145a513698791d6c922fa0f42eb37a39e4afa7b6d64a832aeccee5ce47444ef`](https://stellar.expert/explorer/public/tx/8145a513698791d6c922fa0f42eb37a39e4afa7b6d64a832aeccee5ce47444ef)
+* **AF$ Token Withdrawal (50.00 AF$ from Agent back to Owner)**
+  * *Tx Hash*: [`36a051e77f1348e03ea944a21d5ea1108d64b77888588d20b3cf2ac09a7ab3ef`](https://stellar.expert/explorer/public/tx/36a051e77f1348e03ea944a21d5ea1108d64b77888588d20b3cf2ac09a7ab3ef)
+
+### 3. Automatic 0x402 Micropayment Settlement
+* **Automatic Micropayment Deduction (1.00 AF$)**
+  * *Tx Hash*: [`59ca80e58dd6f160f6130cdc5f79534c65be641af03405263afa22268e66a2be`](https://stellar.expert/explorer/public/tx/59ca80e58dd6f160f6130cdc5f79534c65be641af03405263afa22268e66a2be)
+
+### 4. Marketplace & Forking Economy (Testnet Verification)
+* **Agent Marketplace Forking (0.1 XLM Forking Fee)**
+  * *Tx Hash*: [`0367f4f328678305d283ed8fc7b71866df5f0523e7efa3ef00bb3abc2b77e541`](https://stellar.expert/explorer/testnet/tx/0367f4f328678305d283ed8fc7b71866df5f0523e7efa3ef00bb3abc2b77e541)
+
+---
 
 5+ active users with their Name, Wallet ID, email and Feedback:
 https://docs.google.com/spreadsheets/d/1vLztvp1yzuMoxyTsJxFebRteebIhMIdvP6aaxCJ9CrQ/edit?usp=drivesdk
@@ -22,19 +114,6 @@ It combines:
 - Realtime pub/sub pipeline for events and analytics
 - Agent marketplace, fork economy, workflow executor, and trading surface
 
-## Verified Transaction Evidence
-
-Primary proof transaction (Tx / payment):
-- My freighter wallet address : GARN7A6OJKPR3HAPVIKM6GRUD7KMEHYQ76VJJCO4AAKQ6ETEKFQPQ24T
-- Agent VALIDATOR ID= CAFDQPT6PUWS343TRAAX5O5PCKR5G5YPWBXUDP34NC745XJKAENI4GVY (Deployed On-chain)
-  Validation Fee: 5 XLM 
-- AgentRegistry CONTRACT ID= CA3W37NQUHMFYJJD3TW4B2DI5ABKH7M7BNAMQISB5VW3BCYNO2PC2MYY (Deployed On-chain)
-- Tx ID: `0367f4f328678305d283ed8fc7b71866df5f0523e7efa3ef00bb3abc2b77e541`
-- Explorer: https://stellar.expert/explorer/testnet/tx/0367f4f328678305d283ed8fc7b71866df5f0523e7efa3ef00bb3abc2b77e541
-- Status: successful
-- Memo observed: `fork:d211defa-57a7-4f41-b08d`
-- Amount observed: `0.1 XLM`
-- Fee charged: `0.00001 XLM`
 ---
 
 1. fork-wallet-confirm.png
